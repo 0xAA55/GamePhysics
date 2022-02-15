@@ -79,24 +79,28 @@
     <OutDir>$(SolutionDir)lib\$(PlatformTarget)_$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(ProjectName)\$(PlatformTarget)_$(Configuration)\</IntDir>
     <LibraryPath>$(SolutionDir)lib\$(PlatformTarget)_$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)glm;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)lib\$(PlatformTarget)_$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(ProjectName)\$(PlatformTarget)_$(Configuration)\</IntDir>
     <LibraryPath>$(SolutionDir)lib\$(PlatformTarget)_$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)glm;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(SolutionDir)lib\$(PlatformTarget)_$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(ProjectName)\$(PlatformTarget)_$(Configuration)\</IntDir>
     <LibraryPath>$(SolutionDir)lib\$(PlatformTarget)_$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)glm;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(SolutionDir)lib\$(PlatformTarget)_$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)intermediate\$(ProjectName)\$(PlatformTarget)_$(Configuration)\</IntDir>
     <LibraryPath>$(SolutionDir)lib\$(PlatformTarget)_$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)glm;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
