@@ -1,6 +1,7 @@
 .vs
 *.user
 *.filters
+out
 intermediate
 lib/x86_Debug
 lib/x86_Release
