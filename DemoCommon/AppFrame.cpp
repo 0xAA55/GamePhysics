@@ -46,8 +46,6 @@ AppFrame::AppFrame(int WindowWidth, int WindowHeight, const char *WindowTitle)
 	glfwSwapInterval(-1);
 	if (glfwGetError(NULL) == GLFW_PLATFORM_ERROR)
 		glfwSwapInterval(1);
-
-	OnLoadResources();
 }
 
 void AppFrame::OnKeyDown(AppKeyCode KeyCode)
@@ -89,6 +87,7 @@ void AppFrame::OnUpdate(double Time)
 void AppFrame::RunLoop()
 {
 	GLFWwindow *Window = static_cast<GLFWwindow *>(Internal);
+	OnLoadResources();
 	while (!glfwWindowShouldClose(Window))
 	{
 		int ClientWidth, ClientHeight;
@@ -98,12 +97,12 @@ void AppFrame::RunLoop()
 		OnRender(Seconds, ClientWidth, ClientHeight);
 		glfwPollEvents();
 	}
+	OnUnLoadResources();
 }
 
 AppFrame::~AppFrame()
 {
 	GLFWwindow *Window = static_cast<GLFWwindow *>(Internal);
-	OnUnLoadResources();
 	glfwDestroyWindow(Window);
 	glfwTerminate();
 }
