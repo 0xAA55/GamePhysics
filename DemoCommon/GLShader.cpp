@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 #include "GLShader.hpp"
 #include <cstring>
+#include<GLMesh.hpp>
 using namespace GLRenderer;
 
 ShaderCompilationException::ShaderCompilationException(std::string InfoLog) noexcept :
@@ -49,38 +50,53 @@ std::string GLShaderObject::GetInfoLog() const
 	return InfoLog;
 }
 
-GLUniformLocation::GLUniformLocation(GLint Location) :
+GLuint GLUniformLocation::UsingProgram = 0;
+GLuint GLVertexAttribLocation::UsingProgram = 0;
+
+constexpr GLUniformLocation::GLUniformLocation(GLint Location) :
 	Location(Location)
 {
 }
 
-GLUniformLocation::GLUniformLocation(const GLchar *UniformName) :
-	Location(glGetUniformLocation(UsingProgram, UniformName))
+GLUniformLocation::GLUniformLocation(const GLchar *UniformName)
 {
+	if (!UsingProgram) throw std::logic_error("Must call GLShaderProgram::Use() first.");
+	Location = glGetUniformLocation(UsingProgram, UniformName);
 }
 
-GLUniformLocation::operator GLint() const
+GLUniformLocation::GLUniformLocation(std::string UniformName)
+{
+	Location = glGetUniformLocation(UsingProgram, UniformName.c_str());
+}
+
+constexpr GLUniformLocation::operator GLint() const
 {
 	return Location;
 }
 
-GLVertexAttribLocation::GLVertexAttribLocation(GLint Location) :
+constexpr GLVertexAttribLocation::GLVertexAttribLocation(GLint Location) :
 	Location(Location)
 {
 }
 
-GLVertexAttribLocation::GLVertexAttribLocation(const GLchar *VertexAttribName) :
-	Location(glGetAttribLocation(UsingProgram, VertexAttribName))
+GLVertexAttribLocation::GLVertexAttribLocation(const GLchar *VertexAttribName)
 {
+	if (!UsingProgram) throw std::logic_error("Must call GLShaderProgram::Use() first.");
+	Location = glGetAttribLocation(UsingProgram, VertexAttribName);
 }
 
-GLVertexAttribLocation::operator GLint() const
+GLVertexAttribLocation::GLVertexAttribLocation(std::string VertexAttribName)
+{
+	Location = glGetAttribLocation(UsingProgram, VertexAttribName.c_str());
+}
+
+constexpr GLVertexAttribLocation::operator GLint() const
 {
 	return Location;
 }
 
-GLShaderProgram::GLShaderProgram(const char *VertexShaderCode, const char *GeometryShaderCode, const char *FragmentShaderCode) :
-	Program(glCreateProgram())
+GLShaderProgram::GLShaderProgram(const GLchar *VertexShaderCode, const GLchar *GeometryShaderCode, const GLchar *FragmentShaderCode) :
+	Program(glCreateProgram()), Hash(0)
 {
 	if (VertexShaderCode)
 	{
@@ -88,6 +104,8 @@ GLShaderProgram::GLShaderProgram(const char *VertexShaderCode, const char *Geome
 		s.Compile(VertexShaderCode);
 		InfoLogVS = s.GetInfoLog();
 		glAttachShader(Program, s);
+		GLHashCombine(Hash, std::string(VertexShaderCode));
+		GLHashCombine(Hash, InfoLogVS);
 	}
 	if (GeometryShaderCode)
 	{
@@ -95,6 +113,8 @@ GLShaderProgram::GLShaderProgram(const char *VertexShaderCode, const char *Geome
 		s.Compile(GeometryShaderCode);
 		InfoLogGS = s.GetInfoLog();
 		glAttachShader(Program, s);
+		GLHashCombine(Hash, std::string(GeometryShaderCode));
+		GLHashCombine(Hash, InfoLogGS);
 	}
 	if (FragmentShaderCode)
 	{
@@ -102,6 +122,8 @@ GLShaderProgram::GLShaderProgram(const char *VertexShaderCode, const char *Geome
 		s.Compile(FragmentShaderCode);
 		InfoLogFS = s.GetInfoLog();
 		glAttachShader(Program, s);
+		GLHashCombine(Hash, std::string(FragmentShaderCode));
+		GLHashCombine(Hash, InfoLogFS);
 	}
 	glLinkProgram(Program);
 
@@ -112,8 +134,9 @@ GLShaderProgram::GLShaderProgram(const char *VertexShaderCode, const char *Geome
 	{
 		InfoLogLinkage.resize(InfoLogLength, '\0');
 		glGetShaderInfoLog(Program, InfoLogLength, &InfoLogLength, &InfoLogLinkage[0]);
+		GLHashCombine(Hash, InfoLogLength);
 	}
-	glGetProgramiv(Program, GL_COMPILE_STATUS, &Status);
+	glGetProgramiv(Program, GL_LINK_STATUS, &Status);
 	if (!Status) throw ShaderCompilationException(InfoLogLinkage);
 }
 
@@ -139,6 +162,16 @@ std::string GLShaderProgram::GetInfoLogLinkage() const
 	return InfoLogLinkage;
 }
 
+size_t GLShaderProgram::GetHash() const
+{
+	return Hash;
+}
+
+bool GLShaderProgram::operator==(const GLShaderProgram &Another) const
+{
+	return Hash == Another.Hash && Program == Another.Program;
+}
+
 GLShaderProgram::operator GLuint() const
 {
 	return Program;
@@ -149,6 +182,13 @@ void GLShaderProgram::Use() const
 	glUseProgram(Program);
 	GLUniformLocation::UsingProgram = Program;
 	GLVertexAttribLocation::UsingProgram = Program;
+}
+
+void GLShaderProgram::Unuse() const
+{
+	glUseProgram(0);
+	GLUniformLocation::UsingProgram = 0;
+	GLVertexAttribLocation::UsingProgram = 0;
 }
 
 void GLShaderProgram::SetUniform(GLUniformLocation location, GLfloat x) { glUniform1f(location, x); }
@@ -242,30 +282,24 @@ void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, cons
 	}
 }
 
-void GLShaderProgram::SetUniform(GLUniformLocation location, vec1 v) { SetUniform(location, v.x); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, vec2 v) { SetUniform(location, v.x, v.y); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, vec3 v) { SetUniform(location, v.x, v.y, v.z); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, vec4 v) { SetUniform(location, v.x, v.y, v.z, v.w); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, ivec1 v) { SetUniform(location, v.x); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, ivec2 v) { SetUniform(location, v.x, v.y); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, ivec3 v) { SetUniform(location, v.x, v.y, v.z); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, ivec4 v) { SetUniform(location, v.x, v.y, v.z, v.w); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, uvec1 v) { SetUniform(location, v.x); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, uvec2 v) { SetUniform(location, v.x, v.y); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, uvec3 v) { SetUniform(location, v.x, v.y, v.z); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, uvec4 v) { SetUniform(location, v.x, v.y, v.z, v.w); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, dvec1 v) { SetUniform(location, v.x); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, dvec2 v) { SetUniform(location, v.x, v.y); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, dvec3 v) { SetUniform(location, v.x, v.y, v.z); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, dvec4 v) { SetUniform(location, v.x, v.y, v.z, v.w); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, i64vec1 v) { SetUniform(location, v.x); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, i64vec2 v) { SetUniform(location, v.x, v.y); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, i64vec3 v) { SetUniform(location, v.x, v.y, v.z); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, i64vec4 v) { SetUniform(location, v.x, v.y, v.z, v.w); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, u64vec1 v) { SetUniform(location, v.x); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, u64vec2 v) { SetUniform(location, v.x, v.y); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, u64vec3 v) { SetUniform(location, v.x, v.y, v.z); }
-void GLShaderProgram::SetUniform(GLUniformLocation location, u64vec4 v) { SetUniform(location, v.x, v.y, v.z, v.w); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const mat2 v[], int count, bool transpose) { glUniformMatrix2fv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const mat3 v[], int count, bool transpose) { glUniformMatrix3fv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const mat4 v[], int count, bool transpose) { glUniformMatrix4fv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const mat2x3 v[], int count, bool transpose) { glUniformMatrix2x3fv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const mat2x4 v[], int count, bool transpose) { glUniformMatrix2x4fv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const mat3x2 v[], int count, bool transpose) { glUniformMatrix3x2fv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const mat3x4 v[], int count, bool transpose) { glUniformMatrix3x4fv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const mat4x2 v[], int count, bool transpose) { glUniformMatrix4x2fv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const mat4x3 v[], int count, bool transpose) { glUniformMatrix4x3fv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const dmat2 v[], int count, bool transpose) { glUniformMatrix2dv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const dmat3 v[], int count, bool transpose) { glUniformMatrix3dv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const dmat4 v[], int count, bool transpose) { glUniformMatrix4dv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const dmat2x3 v[], int count, bool transpose) { glUniformMatrix2x3dv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const dmat2x4 v[], int count, bool transpose) { glUniformMatrix2x4dv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const dmat3x2 v[], int count, bool transpose) { glUniformMatrix3x2dv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const dmat3x4 v[], int count, bool transpose) { glUniformMatrix3x4dv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const dmat4x2 v[], int count, bool transpose) { glUniformMatrix4x2dv(location, count, transpose, &v[0][0].x); }
+void GLShaderProgram::SetUniform(GLUniformLocation location, const dmat4x3 v[], int count, bool transpose) { glUniformMatrix4x3dv(location, count, transpose, &v[0][0].x); }
 
 void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLfloat x) { glVertexAttrib1f(location, x); }
 void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLfloat x, GLfloat y) { glVertexAttrib2f(location, x, y); }
@@ -279,6 +313,19 @@ void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLdo
 void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLdouble x, GLdouble y) { glVertexAttrib2d(location, x, y); }
 void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLdouble x, GLdouble y, GLdouble z) { glVertexAttrib3d(location, x, y, z); }
 void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLdouble x, GLdouble y, GLdouble z, GLdouble w) { glVertexAttrib4d(location, x, y, z, w); }
+
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLbyte *xyzw, bool Normalized) { if (Normalized) glVertexAttrib4Nbv(location, xyzw); else  glVertexAttrib4bv(location, xyzw); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLubyte *xyzw, bool Normalized) { if (Normalized) glVertexAttrib4Nubv(location, xyzw); else  glVertexAttrib4ubv(location, xyzw); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLint *xyzw, bool Normalized) { if (Normalized) glVertexAttrib4Niv(location, xyzw); else  glVertexAttrib4iv(location, xyzw); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLuint *xyzw, bool Normalized) { if (Normalized) glVertexAttrib4Nuiv(location, xyzw); else  glVertexAttrib4uiv(location, xyzw); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLshort *xyzw, bool Normalized) { if (Normalized) glVertexAttrib4Nsv(location, xyzw); else  glVertexAttrib4sv(location, xyzw); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLushort *xyzw, bool Normalized) { if (Normalized) glVertexAttrib4Nusv(location, xyzw); else  glVertexAttrib4usv(location, xyzw); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLbyte x, GLbyte y, GLbyte z, GLbyte w, bool Normalized) { GLbyte xyzw[4] = {x, y, z, w}; SetVertexAttribFloat(location, xyzw, Normalized); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLubyte x, GLubyte y, GLubyte z, GLubyte w, bool Normalized) { if (Normalized) glVertexAttrib4Nub(location, x, y, z, w); else { GLubyte xyzw[] = {x, y, z, w}; glVertexAttrib4ubv(location, xyzw); } }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLint x, GLint y, GLint z, GLint w, bool Normalized) { GLint xyzw[4] = {x, y, z, w}; SetVertexAttribFloat(location, xyzw, Normalized); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLuint x, GLuint y, GLuint z, GLuint w, bool Normalized) { GLuint xyzw[4] = {x, y, z, w}; SetVertexAttribFloat(location, xyzw, Normalized); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLshort x, GLshort y, GLshort z, GLshort w, bool Normalized) { GLshort xyzw[4] = {x, y, z, w}; SetVertexAttribFloat(location, xyzw, Normalized); }
+void GLShaderProgram::SetVertexAttribFloat(GLVertexAttribLocation location, GLushort x, GLushort y, GLushort z, GLushort w, bool Normalized) { GLushort xyzw[4] = {x, y, z, w}; SetVertexAttribFloat(location, xyzw, Normalized); }
 
 void GLShaderProgram::SetVertexAttribInt(GLVertexAttribLocation location, GLint x) { glVertexAttribI1i(location, x); }
 void GLShaderProgram::SetVertexAttribInt(GLVertexAttribLocation location, GLint x, GLint y) { glVertexAttribI2i(location, x, y); }
