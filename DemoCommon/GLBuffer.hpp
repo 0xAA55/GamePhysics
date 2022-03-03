@@ -2,6 +2,7 @@
 #include<GLRendererBase.hpp>
 #include<vector>
 #include<cstring>
+#include<stdexcept>
 #include<unordered_map>
 namespace GLRenderer
 {
@@ -131,6 +132,15 @@ namespace GLRenderer
 
 		T operator [] (SizeType index) const;
 		T &operator [] (SizeType index);
+
+		template<typename T2>
+		GLBuffer<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const;
+
+		template<typename T2>
+		GLBuffer<T2> StaticCast(BufferType Type, BufferUsage Usage) const;
+
+		template<typename T2>
+		GLBuffer<T2> DynamicCast(BufferType Type, BufferUsage Usage) const;
 	};
 
 	template<typename T>
@@ -483,5 +493,55 @@ namespace GLRenderer
 	{
 		SetUpdated(index);
 		return Contents[index];
+	}
+
+	class BufferCastingError : public std::runtime_error
+	{
+	public:
+		BufferCastingError(std::string What) noexcept;
+	};
+
+	template<typename T>
+	template<typename T2>
+	GLBuffer<T2> GLBuffer<T>::ReinterpretCast(BufferType Type, BufferUsage Usage) const
+	{
+		GLBuffer<T2> Ret(Type, Usage);
+		SizeType SizeBytes = Size() * sizeof(T);
+		if (SizeBytes % sizeof(T2))
+		{
+			throw BufferCastingError("Element count not divisible.");
+		}
+		SizeType UnitCount = SizeBytes / sizeof(T2);
+		Ret.Resize(UnitCount);
+		std::memcpy(Ret.Contents.data(), Contents.data(), SizeBytes);
+		return Ret;
+	}
+
+	template<typename T>
+	template<typename T2>
+	GLBuffer<T2> GLBuffer<T>::StaticCast(BufferType Type, BufferUsage Usage) const
+	{
+		GLBuffer<T2> Ret(Type, Usage);
+		SizeType Count = Size();
+		Ret.Resize(Count);
+		for (SizeType i = 0; i < Count; i++)
+		{
+			Ret[i] = static_cast<T2>(Contents[i]);
+		}
+		return Ret;
+	}
+
+	template<typename T>
+	template<typename T2>
+	GLBuffer<T2> GLBuffer<T>::DynamicCast(BufferType Type, BufferUsage Usage) const
+	{
+		GLBuffer<T2> Ret(Type, Usage);
+		SizeType Count = Size();
+		Ret.Resize(Count);
+		for (SizeType i = 0; i < Count; i++)
+		{
+			Ret[i] = dynamic_cast<T2>(Contents[i]);
+		}
+		return Ret;
 	}
 }

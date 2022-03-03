@@ -111,3 +111,8 @@ void GLBufferObject::Unmap()
 	Bind();
 	glUnmapBuffer(static_cast<GLenum>(Type));
 }
+
+BufferCastingError::BufferCastingError(std::string What) noexcept :
+	std::runtime_error(What)
+{
+}
