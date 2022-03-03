@@ -33,12 +33,13 @@ namespace GLRenderer
 		}
 	}
 
-	void Renderer::SetDepthMode(bool Enabled, CompareFunc CompareToZBuf)
+	void Renderer::SetDepthMode(bool Enabled, CompareFunc CompareToZBuf, GLdouble NearVal, GLdouble FarVal)
 	{
 		if (Enabled)
 		{
 			glEnable(GL_DEPTH_TEST);
 			glDepthFunc(static_cast<GLenum>(CompareToZBuf));
+			glDepthRange(NearVal, FarVal);
 		}
 		else
 		{

@@ -35,7 +35,7 @@ namespace GLRenderer
 		static void SetViewport(GLint x, GLint y, GLsizei w, GLsizei h);
 		static void DefineFrontFace(FaceType ft = FaceType::CCW);
 		static void SetCullFace(bool Enabled = true, CullMode cm = CullMode::BackFace);
-		static void SetDepthMode(bool Enabled = false, CompareFunc CompareToZBuf = CompareFunc::Less);
+		static void SetDepthMode(bool Enabled = false, CompareFunc CompareToZBuf = CompareFunc::Less, GLdouble NearVal = 0, GLdouble FarVal = 1);
 
 		static mat3 Mat3RotEuler(GLfloat Yaw, GLfloat Pitch, GLfloat Roll);
 		static mat4 Mat4RotEuler(GLfloat Yaw, GLfloat Pitch, GLfloat Roll);
