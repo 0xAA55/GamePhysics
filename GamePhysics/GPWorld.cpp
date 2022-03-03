@@ -20,14 +20,14 @@ void GPWorld::AddRigidBody(const GPRigidBodyCreation &r)
 	RigidBodies.push_back(std::shared_ptr<GPRigidBody>(new GPRigidBody(r)));
 }
 
-void GPWorld::RemoveRigidBody(GPRigidBody *p)
+void GPWorld::RemoveRigidBody(GPRigidBody *b)
 {
 	RigidBodies.erase(
 		std::remove_if(RigidBodies.begin(),
 			RigidBodies.end(),
-			[p](const auto &r)
+			[b](const auto &r)
 			{
-				return p == r.get();
+				return b == r.get();
 			}),
 		RigidBodies.end()
 	);
@@ -47,7 +47,7 @@ void GPWorld::Tick(double Duration)
 			r->Integrate(Duration);
 			CurTime += Duration;
 		}
-		while (CurTime + SimulationDeltaTime <= TargetTime)
+		else if (CurTime + SimulationDeltaTime <= TargetTime)
 		{
 			r->Integrate(SimulationDeltaTime);
 			CurTime += SimulationDeltaTime;

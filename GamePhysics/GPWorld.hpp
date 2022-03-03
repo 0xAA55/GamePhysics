@@ -22,7 +22,7 @@ namespace GamePhysics
 		GPWorld();
 		void AddRigidBody(std::shared_ptr<GPRigidBody> r);
 		void AddRigidBody(const GPRigidBodyCreation &r);
-		void RemoveRigidBody(GPRigidBody *p);
+		void RemoveRigidBody(GPRigidBody *b);
 		void Tick(double Duration);
 	};
 }
