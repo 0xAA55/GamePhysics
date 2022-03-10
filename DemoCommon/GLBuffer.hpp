@@ -1,6 +1,7 @@
 #pragma once
 #include<GLRendererBase.hpp>
 #include<vector>
+#include<memory>
 #include<cstring>
 #include<stdexcept>
 #include<unordered_map>
@@ -45,31 +46,122 @@ namespace GLRenderer
 		GLuint Object;
 		size_t Length;
 
-		static std::unordered_map<BufferType, GLuint> BufferBindings;
-
 	public:
 		GLBufferObject() = delete;
-		GLBufferObject(const GLBufferObject& From) = delete;
+		GLBufferObject(const GLBufferObject &From) = delete;
+		GLBufferObject(GLBufferObject &From, ptrdiff_t CopyLength = -1);
+		GLBufferObject(GLBufferObject &From, size_t Length, ptrdiff_t CopyLength = -1);
 		GLBufferObject(BufferType Type, size_t Length, BufferUsage Usage);
 		GLBufferObject(BufferType Type, size_t Length, BufferUsage Usage, GLBufferObject &CopyFrom, ptrdiff_t CopyLength = -1);
 		~GLBufferObject();
 
-		operator GLuint() const;
+		inline operator GLuint() const { return Object; }
+		inline size_t GetLength() const { return Length; }
 
-		size_t GetLength();
+		void *MapRO() const;
+		void *MapWO() const;
+		void *MapRW() const;
+		void *MapRO(size_t Offset, size_t Length) const;
+		void *MapWO(size_t Offset, size_t Length) const;
+		void *MapRW(size_t Offset, size_t Length) const;
+		void Unmap() const;
+		void SetData(const void *Data) const;
+		void GetData(void *DataOut) const;
+		void SetData(size_t Offset, size_t Length, const void *Data) const;
+		void GetData(size_t Offset, size_t Length, void *DataOut) const;
 
-		void *MapRO();
-		void *MapWO();
-		void *MapRW();
-		void *MapRO(size_t Offset, size_t Length);
-		void *MapWO(size_t Offset, size_t Length);
-		void *MapRW(size_t Offset, size_t Length);
-		void Unmap();
+		void Bind() const;
+		void Unbind() const;
+	};
 
-		static void Bind(BufferType Type, GLuint BufferObject);
-		static void Unbind(BufferType Type);
-		inline void Bind() { Bind(Type, Object); }
-		inline void Unbind() { Unbind(Type); }
+	class GLBufferOwnership
+	{
+	protected:
+		std::shared_ptr<GLBufferObject> BufferObject;
+
+	public:
+		bool ObjectChanged;
+
+		inline GLBufferOwnership() noexcept  :
+			ObjectChanged(false),
+			BufferObject(nullptr)
+		{}
+
+		inline GLBufferOwnership(GLBufferObject * BufferObject) noexcept :
+			ObjectChanged(false),
+			BufferObject(BufferObject)
+		{}
+
+		inline GLBufferOwnership(std::shared_ptr<GLBufferObject> BufferObject) noexcept :
+			ObjectChanged(false),
+			BufferObject(BufferObject)
+		{}
+
+		inline GLBufferOwnership(const GLBufferOwnership& CopyFrom) noexcept :
+			ObjectChanged(false),
+			BufferObject(CopyFrom.BufferObject)
+		{}
+
+		inline ~GLBufferOwnership() noexcept
+		{
+			Discard();
+		}
+
+		inline GLBufferOwnership &operator =(GLBufferObject *BufferObject)
+		{
+			this->BufferObject.reset(BufferObject);
+			ObjectChanged = true;
+			return *this;
+		}
+
+		inline GLBufferOwnership &operator =(std::shared_ptr<GLBufferObject> BufferObject)
+		{
+			this->BufferObject = BufferObject;
+			ObjectChanged = true;
+			return *this;
+		}
+
+		inline operator GLBufferObject() const noexcept
+		{
+			return *BufferObject;
+		}
+
+		inline GLBufferObject &operator *() const noexcept
+		{
+			return *BufferObject;
+		}
+
+		inline GLBufferObject *operator ->() const noexcept
+		{
+			return BufferObject.get();
+		}
+
+		inline GLBufferObject *Get() const noexcept
+		{
+			return BufferObject.get();
+		}
+
+		inline operator bool() const noexcept
+		{
+			return BufferObject.operator bool();
+		}
+
+		inline void Discard() noexcept
+		{
+			BufferObject.reset();
+			ObjectChanged = true;
+		}
+
+		inline bool Empty() const noexcept
+		{
+			return BufferObject == nullptr;
+		}
+	};
+
+	class BufferCastingError : public std::runtime_error
+	{
+	public:
+		BufferCastingError(std::string What) noexcept;
 	};
 
 	template<typename T>
@@ -77,6 +169,12 @@ namespace GLRenderer
 
 	template<typename T>
 	class GLBufferConstIterator;
+
+	template<typename T>
+	class GLBuffer;
+
+	template<typename T>
+	class GLBufferNoCache;
 
 	template<typename T>
 	class GLBuffer
@@ -92,55 +190,322 @@ namespace GLRenderer
 	protected:
 		BufferType Type;
 		BufferUsage Usage;
-		GLBufferObject *BufferObject;
+
+		GLBufferOwnership BufferObject;
 		VectorType Contents;
+
 		BoolVecType Updated;
 		DifferenceType Updated_MinIndex;
 		DifferenceType Updated_MaxIndex;
-		bool Flushed = false;
-		void SetFlushed();
-		bool ObjectChanged;
+		bool Flushed;
+
+		void SetFlushed()
+		{
+			Updated.clear();
+			Updated.resize(Size(), false);
+			Updated_MinIndex = -1;
+			Updated_MaxIndex = -1;
+			Flushed = true;
+		}
 
 	public:
-		GLBuffer() = delete;
-		GLBuffer(BufferType Type, BufferUsage Usage);
-		GLBuffer(const GLBuffer &CopyFrom);
-		GLBuffer& operator =(const GLBuffer &CopyFrom);
-		~GLBuffer();
-		void SetUpdated(DifferenceType index);
-		void SetItem(DifferenceType index, const T &item);
-		T GetItem(DifferenceType index) const;
-		T &GetItem(DifferenceType index);
-		bool Empty() const;
-		SizeType Size() const;
-		SizeType Capacity() const;
-		void Resize(SizeType Count);
-		void Reserve(SizeType NewCapacity);
-		void ShrinkToFit();
-		void Clear();
-		void PushBack(const T &item);
-		void PushBack(const T items[], SizeType Count);
-		void PushBack(const std::vector<T>& items);
-		void WatchForObjectChanged();
-		bool CheckObjectChanged() const;
-
 		const SizeType FlushingGap = 16;
 
-		void Bind();
-		void Unbind();
-		void Flush();
+		GLBuffer() = delete;
+		GLBuffer(BufferType Type, BufferUsage Usage) :
+			Type(Type),
+			Usage(Usage),
+			BufferObject(nullptr),
+			Contents(),
+			Updated(),
+			Updated_MinIndex(-1),
+			Updated_MaxIndex(-1),
+			Flushed(false)
+		{
+		}
 
-		T operator [] (SizeType index) const;
-		T &operator [] (SizeType index);
+		GLBuffer(const GLBuffer &CopyFrom) :
+			Type(CopyFrom.Type),
+			Usage(CopyFrom.Usage),
+			BufferObject(CopyFrom.BufferObject),
+			Contents(CopyFrom.Contents),
+			Updated(CopyFrom.Updated),
+			Updated_MinIndex(CopyFrom.Updated_MinIndex),
+			Updated_MaxIndex(CopyFrom.Updated_MaxIndex),
+			Flushed(CopyFrom.Flushed)
+		{
+		}
 
-		template<typename T2>
-		GLBuffer<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const;
+		GLBuffer &operator =(const GLBuffer &CopyFrom)
+		{
+			Type = CopyFrom.Type;
+			Usage = CopyFrom.Usage;
 
-		template<typename T2>
-		GLBuffer<T2> StaticCast(BufferType Type, BufferUsage Usage) const;
+			BufferObject = CopyFrom.BufferObject;
+			Contents = CopyFrom.Contents;
 
-		template<typename T2>
-		GLBuffer<T2> DynamicCast(BufferType Type, BufferUsage Usage) const;
+			Updated = CopyFrom.Updated;
+			Updated_MinIndex = CopyFrom.Updated_MinIndex;
+			Updated_MaxIndex = CopyFrom.Updated_MaxIndex;
+			Flushed = CopyFrom.Flushed;
+		}
+
+		inline void SetUpdated(DifferenceType index)
+		{
+			if (Updated_MinIndex == -1 || Updated_MinIndex > index) Updated_MinIndex = index;
+			if (Updated_MaxIndex == -1 || Updated_MaxIndex < index) Updated_MaxIndex = index;
+			Updated[index] = true;
+			Flushed = false;
+		}
+
+		inline void SetItem(DifferenceType index, const T &item)
+		{
+			SetUpdated(index);
+			Contents[index] = item;
+		}
+
+		inline T GetItem(DifferenceType index) const
+		{
+			return Contents[index];
+		}
+
+		inline T &GetItem(DifferenceType index)
+		{
+			SetUpdated(index);
+			return Contents[index];
+		}
+
+		inline bool Empty() const
+		{
+			return Size() == 0;
+		}
+
+		inline SizeType Size() const
+		{
+			return Contents.size();
+		}
+
+		inline SizeType Capacity() const
+		{
+			return Contents.capacity();
+		}
+
+		inline void Resize(SizeType Count)
+		{
+			Contents.resize(Count);
+			Updated.resize(Count, true);
+			BufferObject = new GLBufferObject(BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
+		}
+
+		inline void Resize(SizeType Count, const T& Value)
+		{
+			Contents.resize(Count, Value);
+			Updated.resize(Count, true);
+			BufferObject = new GLBufferObject(BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
+		}
+
+		inline void Reserve(SizeType NewCapacity)
+		{
+			Contents.reserve(NewCapacity);
+			Updated.reserve(NewCapacity);
+			BufferObject = new GLBufferObject(BufferObject, Capacity() * sizeof(T), Size() * sizeof(T));
+		}
+
+		inline void Clear()
+		{
+			Contents.clear();
+			Updated.clear();
+		}
+
+		inline void ShrinkToFit()
+		{
+			Contents.shrink_to_fit();
+			Updated.shrink_to_fit();
+			SizeType SizeBytes = Size() * sizeof(T);
+			SizeType CapacityBytes = Capacity() * sizeof(T);
+			if (!BufferObject.Empty())
+			{
+				if (BufferObject->GetLength() != CapacityBytes)
+				{
+					BufferObject = new GLBufferObject(*BufferObject, SizeBytes);
+					Flushed = false;
+				}
+			}
+		}
+
+		inline void PushBack(const T &item)
+		{
+			Contents.push_back(item);
+			Updated.push_back(true);
+			Flushed = false;
+		}
+
+		inline void PushBack(const T items[], SizeType Count)
+		{
+			for (SizeType i = 0; i < Count; i++)
+			{
+				Contents.push_back(items[i]);
+				Updated.push_back(true);
+			}
+			Flushed = false;
+		}
+
+		inline void PushBack(const std::vector<T> &items)
+		{
+			SizeType Count = items.size();
+			for (SizeType i = 0; i < Count; i++)
+			{
+				Contents.push_back(items[i]);
+				Updated.push_back(true);
+			}
+			Flushed = false;
+		}
+
+		inline void WatchForObjectChanged() noexcept
+		{
+			BufferObject.ObjectChanged = false;
+		}
+
+		inline bool CheckObjectChanged() const
+		{
+			return BufferObject.ObjectChanged;
+		}
+
+		inline void Bind()
+		{
+			Flush();
+			if (!BufferObject.Empty()) BufferObject->Bind();
+		}
+
+		inline void Unbind()
+		{
+			if (!BufferObject.Empty()) BufferObject->Unbind();
+		}
+
+		inline T operator [] (SizeType index) const
+		{
+			return Contents[index];
+		}
+
+		inline T &operator [] (SizeType index)
+		{
+			SetUpdated(index);
+			return Contents[index];
+		}
+
+		void Flush()
+		{
+			if (Flushed) return;
+			if (!Size())
+			{
+				BufferObject.Discard();
+				return;
+			}
+			SizeType SizeBytes = Size() * sizeof(T);
+			SizeType CapacityBytes = Capacity() * sizeof(T);
+			if (!BufferObject.Empty())
+			{
+				if (BufferObject->GetLength() != CapacityBytes)
+				{
+					BufferObject = new GLBufferObject(*BufferObject, SizeBytes);
+				}
+				Updated_MinIndex = max(Updated_MinIndex, static_cast<DifferenceType>(0));
+				Updated_MaxIndex = min(Updated_MaxIndex, static_cast<DifferenceType>(Size()));
+				if (Updated_MaxIndex < 0) Updated_MaxIndex = static_cast<DifferenceType>(Size());
+				DifferenceType BlockBegin = 0;
+				DifferenceType BlockEnd = 0;
+				DifferenceType i;
+				bool IsInBlock = false;
+				SizeType BlockGap = 0;
+				SizeType Offset = 0, BlockLengthBytes = 0;
+				BufferObject->Bind();
+				for (i = Updated_MinIndex; i <= Updated_MaxIndex; i++)
+				{
+					if (Updated[i])
+					{
+						if (!IsInBlock)
+						{
+							BlockBegin = i;
+							IsInBlock = true;
+						}
+						BlockEnd = i;
+						BlockGap = 0;
+					}
+					else
+					{
+						if (IsInBlock)
+						{
+							BlockGap++;
+							if (BlockGap > FlushingGap)
+							{
+								IsInBlock = false;
+								Offset = BlockBegin * sizeof(T);
+								BlockLengthBytes = (BlockEnd + 1 - BlockBegin) * sizeof(T);
+								BufferObject->SetData(Offset, BlockLengthBytes, &Contents[BlockBegin]);
+							}
+						}
+					}
+				}
+				if (IsInBlock)
+				{
+					Offset = BlockBegin * sizeof(T);
+					BlockLengthBytes = (BlockEnd + 1 - BlockBegin) * sizeof(T);
+					BufferObject->SetData(Offset, BlockLengthBytes, &Contents[BlockBegin]);
+				}
+				BufferObject->Unbind();
+				SetFlushed();
+			}
+			else
+			{
+				BufferObject = new GLBufferObject(Type, CapacityBytes, Usage);
+				BufferObject->Bind();
+				BufferObject->SetData(Contents.data());
+				BufferObject->Unbind();
+				SetFlushed();
+				return;
+			}
+		}
+
+		template<typename T2> GLBuffer<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
+		{
+			GLBuffer<T2> Ret(Type, Usage);
+			SizeType SizeBytes = Size() * sizeof(T);
+			if (SizeBytes % sizeof(T2))
+			{
+				throw BufferCastingError("Element count not divisible.");
+			}
+			SizeType UnitCount = SizeBytes / sizeof(T2);
+			Ret.Resize(UnitCount);
+			std::memcpy(Ret.Contents.data(), Contents.data(), SizeBytes);
+			Ret.Flush();
+			return Ret;
+		}
+
+		template<typename T2> GLBuffer<T2> StaticCast(BufferType Type, BufferUsage Usage) const
+		{
+			GLBuffer<T2> Ret(Type, Usage);
+			SizeType Count = Size();
+			Ret.Resize(Count);
+			for (SizeType i = 0; i < Count; i++)
+			{
+				Ret[i] = static_cast<T2>(Contents[i]);
+			}
+			Ret.Flush();
+			return Ret;
+		}
+
+		template<typename T2> GLBuffer<T2> DynamicCast(BufferType Type, BufferUsage Usage) const
+		{
+			GLBuffer<T2> Ret(Type, Usage);
+			SizeType Count = Size();
+			Ret.Resize(Count);
+			for (SizeType i = 0; i < Count; i++)
+			{
+				Ret[i] = dynamic_cast<T2>(Contents[i]);
+			}
+			Ret.Flush();
+			return Ret;
+		}
 	};
 
 	template<typename T>
@@ -190,358 +555,251 @@ namespace GLRenderer
 	};
 
 	template<typename T>
-	void GLBuffer<T>::SetFlushed()
-	{
-		Updated.clear();
-		Updated.resize(Size(), false);
-		Updated_MinIndex = -1;
-		Updated_MaxIndex = -1;
-		Flushed = true;
-	}
+	class GLBufferNoCache;
 
 	template<typename T>
-	GLBuffer<T>::GLBuffer(BufferType Type, BufferUsage Usage) :
-		Type(Type),
-		Usage(Usage),
-		BufferObject(nullptr),
-		Contents(),
-		Updated(),
-		Updated_MinIndex(-1),
-		Updated_MaxIndex(-1),
-		Flushed(false),
-		ObjectChanged(false)
-	{
-	}
-
-	template<typename T>
-	GLBuffer<T>::GLBuffer(const GLBuffer<T> &CopyFrom) :
-		Type(CopyFrom.Type),
-		Usage(CopyFrom.Usage),
-		BufferObject(nullptr),
-		Contents(CopyFrom.Contents),
-		Updated(),
-		Updated_MinIndex(0),
-		Updated_MaxIndex(Size()),
-		ObjectChanged(false)
-	{
-		SizeType Count = Size();
-		Updated.reserve(Capacity());
-		for (SizeType i = 0; i < Count; i++) Updated.push_back(true);
-	}
-
-	template<typename T>
-	GLBuffer<T> & GLBuffer<T>::operator =(const GLBuffer &CopyFrom)
-	{
-		Type = CopyFrom.Type;
-		Usage = CopyFrom.Usage;
-		if (BufferObject)
-		{
-			delete BufferObject;
-			BufferObject = nullptr;
-		}
-		Contents = CopyFrom.Contents;
-		SizeType Count = Size();
-		Updated.reserve(Capacity());
-		for (SizeType i = 0; i < Count; i++) Updated.push_back(true);
-		Updated_MinIndex = 0;
-		Updated_MaxIndex = Count;
-	}
-
-	template<typename T>
-	GLBuffer<T>::~GLBuffer()
-	{
-		if (BufferObject) delete BufferObject;
-	}
-
-	template<typename T>
-	void GLBuffer<T>::SetUpdated(DifferenceType index)
-	{
-		if (Updated_MinIndex == -1 || Updated_MinIndex > index) Updated_MinIndex = index;
-		if (Updated_MaxIndex == -1 || Updated_MaxIndex < index) Updated_MaxIndex = index;
-		Updated[index] = true;
-		Flushed = false;
-	}
-
-	template<typename T>
-	void GLBuffer<T>::SetItem(DifferenceType index, const T &item)
-	{
-		SetUpdated(index);
-		Contents[index] = item;
-	}
-
-	template<typename T>
-	T GLBuffer<T>::GetItem(DifferenceType index) const
-	{
-		return Contents[index];
-	}
-
-	template<typename T>
-	T &GLBuffer<T>::GetItem(DifferenceType index)
-	{
-		SetUpdated(index);
-		return Contents[index];
-	}
-
-	template<typename T>
-	bool GLBuffer<T>::Empty() const
-	{
-		return Contents.empty();
-	}
-
-	template<typename T>
-	typename GLBuffer<T>::SizeType GLBuffer<T>::Size() const
-	{
-		return Contents.size();
-	}
-
-	template<typename T>
-	typename GLBuffer<T>::SizeType GLBuffer<T>::Capacity() const
-	{
-		return Contents.capacity();
-	}
-
-	template<typename T>
-	void GLBuffer<T>::Resize(SizeType Count)
-	{
-		SizeType PrevCount = Size();
-		Contents.resize(Count);
-		Updated.resize(Count);
-		Flushed = false;
-	}
-
-	template<typename T>
-	void GLBuffer<T>::Reserve(SizeType NewCapacity)
-	{
-		Contents.reserve(NewCapacity);
-		Updated.reserve(NewCapacity);
-		Flushed = false;
-	}
-
-	template<typename T>
-	void GLBuffer<T>::Clear()
-	{
-		Contents.clear();
-		Updated.clear();
-		delete BufferObject;
-		BufferObject = nullptr;
-		Flushed = false;
-	}
-
-	template<typename T>
-	void GLBuffer<T>::PushBack(const T &item)
-	{
-		Contents.push_back(item);
-		Updated.push_back(true);
-	}
-
-	template<typename T>
-	void GLBuffer<T>::PushBack(const T items[], SizeType Count)
-	{
-		for (SizeType i = 0; i < Count; i++)
-		{
-			Contents.push_back(items[i]);
-			Updated.push_back(true);
-		}
-	}
-
-	template<typename T>
-	void GLBuffer<T>::PushBack(const std::vector<T> &items)
-	{
-		SizeType Count = items.size();
-		for (SizeType i = 0; i < Count; i++)
-		{
-			Contents.push_back(items[i]);
-			Updated.push_back(true);
-		}
-	}
-
-	template<typename T>
-	void GLBuffer<T>::WatchForObjectChanged()
-	{
-		ObjectChanged = false;
-	}
-
-	template<typename T>
-	bool GLBuffer<T>::CheckObjectChanged() const
-	{
-		return ObjectChanged;
-	}
-
-	template<typename T>
-	void GLBuffer<T>::ShrinkToFit()
-	{
-		Contents.shrink_to_fit();
-		Updated.shrink_to_fit();
-		Flushed = false;
-		SizeType SizeBytes = Size() * sizeof(T);
-		SizeType CapacityBytes = Capacity() * sizeof(T);
-		if (BufferObject)
-		{
-			if (BufferObject->GetLength() != CapacityBytes)
-			{
-				GLBufferObject *NewObject = new GLBufferObject(Type, CapacityBytes, Usage, *BufferObject, SizeBytes);
-				delete BufferObject;
-				BufferObject = NewObject;
-				ObjectChanged = true;
-			}
-		}
-	}
-
-	template<typename T>
-	void GLBuffer<T>::Bind()
-	{
-		Flush();
-		if (BufferObject) BufferObject->Bind();
-	}
-
-	template<typename T>
-	void GLBuffer<T>::Unbind()
-	{
-		if (BufferObject) BufferObject->Unbind();
-	}
-
-	template<typename T>
-	void GLBuffer<T>::Flush()
-	{
-		if (Flushed) return;
-		if (!Size())
-		{
-			if (BufferObject)
-			{
-				delete BufferObject;
-				BufferObject = nullptr;
-				ObjectChanged = true;
-			}
-			return;
-		}
-		SizeType SizeBytes = Size() * sizeof(T);
-		SizeType CapacityBytes = Capacity() * sizeof(T);
-		if (BufferObject)
-		{
-			if (BufferObject->GetLength() != CapacityBytes)
-			{
-				GLBufferObject *NewObject = new GLBufferObject(Type, CapacityBytes, Usage, *BufferObject, SizeBytes);
-				delete BufferObject;
-				BufferObject = NewObject;
-				ObjectChanged = true;
-			}
-			Updated_MinIndex = max(Updated_MinIndex, static_cast<DifferenceType>(0));
-			Updated_MaxIndex = min(Updated_MaxIndex, static_cast<DifferenceType>(Size()));
-			if (Updated_MaxIndex < 0) Updated_MaxIndex = static_cast<DifferenceType>(Size());
-			DifferenceType BlockBegin = 0;
-			DifferenceType BlockEnd = 0;
-			DifferenceType i;
-			bool IsInBlock = false;
-			SizeType BlockGap = 0;
-			SizeType Offset = 0, BlockLengthBytes = 0;
-			for (i = Updated_MinIndex; i <= Updated_MaxIndex; i++)
-			{
-				if (Updated[i])
-				{
-					if (!IsInBlock)
-					{
-						BlockBegin = i;
-						IsInBlock = true;
-					}
-					BlockEnd = i;
-					BlockGap = 0;
-				}
-				else
-				{
-					if (IsInBlock)
-					{
-						BlockGap++;
-						if (BlockGap > FlushingGap)
-						{
-							IsInBlock = false;
-							Offset = BlockBegin * sizeof(T);
-							BlockLengthBytes = (BlockEnd + 1 - BlockBegin) * sizeof(T);
-							std::memcpy(BufferObject->MapWO(Offset, BlockLengthBytes), Contents.data(), BlockLengthBytes);
-							BufferObject->Unmap();
-						}
-					}
-				}
-			}
-			if (IsInBlock)
-			{
-				Offset = BlockBegin * sizeof(T);
-				BlockLengthBytes = (BlockEnd + 1 - BlockBegin) * sizeof(T);
-				std::memcpy(BufferObject->MapWO(Offset, BlockLengthBytes), Contents.data(), BlockLengthBytes);
-				BufferObject->Unmap();
-			}
-			SetFlushed();
-		}
-		else
-		{
-			BufferObject = new GLBufferObject(Type, CapacityBytes, Usage);
-			ObjectChanged = true;
-			std::memcpy(BufferObject->MapWO(), Contents.data(), SizeBytes);
-			BufferObject->Unmap();
-			SetFlushed();
-			return;
-		}
-	}
-
-	template<typename T>
-	T GLBuffer<T>::operator [] (SizeType index) const
-	{
-		return Contents[index];
-	}
-
-	template<typename T>
-	T &GLBuffer<T>::operator [] (SizeType index)
-	{
-		SetUpdated(index);
-		return Contents[index];
-	}
-
-	class BufferCastingError : public std::runtime_error
+	class GLBufferNoCache
 	{
 	public:
-		BufferCastingError(std::string What) noexcept;
+		using Cached = GLBuffer<T>;
+		using SizeType = typename Cached::SizeType;
+		using DifferenceType = typename Cached::DifferenceType;
+
+	protected:
+		BufferType Type;
+		BufferUsage Usage;
+
+		GLBufferOwnership BufferObject;
+		SizeType ItemCount;
+		SizeType ItemCapacity;
+
+	public:
+		GLBufferNoCache() = delete;
+		GLBufferNoCache(BufferType Type, BufferUsage Usage, SizeType InitCapacity = 32) :
+			Type(Type),
+			Usage(Usage),
+			ItemCount(0),
+			ItemCapacity(InitCapacity),
+			BufferObject(new GLBufferObject(Type, InitCapacity * sizeof(T), Usage))
+		{
+		}
+		GLBufferNoCache(const GLBufferNoCache &From) :
+			Type(From.Type),
+			Usage(From.Usage),
+			ItemCount(From.Size()),
+			ItemCapacity(From.Capacity()),
+			BufferObject(new GLBufferObject(From))
+		{
+		}
+		GLBufferNoCache(Cached &From) :
+			Type(From.Type),
+			Usage(From.Usage),
+			ItemCount(From.Size()),
+			ItemCapacity(From.Capacity())
+		{
+			From.Flush();
+			BufferObject = From.BufferObject;
+		}
+
+		inline SizeType Size() const noexcept
+		{
+			return ItemCount;
+		}
+
+		inline SizeType Capacity() const noexcept
+		{
+			return ItemCapacity;
+		}
+
+		inline bool Empty() const noexcept
+		{
+			return Size() == 0;
+		}
+
+		inline void SetItem(DifferenceType Index, const T &Item) noexcept
+		{
+			BufferObject->Bind();
+			BufferObject->SetData(Index * sizeof(T), sizeof(T), &Item);
+		}
+
+		inline T GetItem(DifferenceType Index) const noexcept
+		{
+			T Ret;
+			BufferObject->Bind();
+			BufferObject->GetData(Index * sizeof(T), sizeof(T), &Ret);
+			return Ret;
+		}
+
+		inline void Reserve(SizeType NewCapacity)
+		{
+			if (NewCapacity <= ItemCapacity) return;
+			BufferObject = new GLBufferObject(*BufferObject, NewCapacity * sizeof(T), ItemCount * sizeof(T));
+			ItemCapacity = NewCapacity;
+		}
+
+		inline void Resize(SizeType Count, const T &Value)
+		{
+			if (ItemCapacity < Count) Reserve(Count);
+			if (Count > ItemCount)
+			{
+				size_t MapSize = Count - ItemCount;
+				BufferObject->Bind();
+				T *MapPointer = static_cast<T *>(BufferObject->MapWO(ItemCount * sizeof(T), MapSize * sizeof(T)));
+				for (size_t i = 0; i < MapSize; i++) MapPointer[ItemCount + i] = Value;
+				BufferObject->Unmap();
+			}
+			ItemCount = Count;
+		}
+
+		inline void Resize(SizeType Count)
+		{
+			Resize(Count, T());
+		}
+
+		inline void Clear()
+		{
+			ItemCount = 0;
+		}
+
+		inline void ShrinkToFit()
+		{
+			if (ItemCapacity > ItemCount)
+			{
+				ItemCapacity = ItemCount;
+				BufferObject = new GLBufferObject(*BufferObject, ItemCount * sizeof(T));
+			}
+		}
+
+		inline void PushBack(const T &item)
+		{
+			size_t Index = ItemCount;
+			if (ItemCount++ >= ItemCapacity) Reserve(ItemCapacity * 3 / 2 + 1);
+			SetItem(Index, item);
+		}
+
+		inline void PushBack(const T Items[], SizeType Count)
+		{
+			if (!Count) return;
+
+			size_t TotalSize = ItemCount + Count;
+			if (TotalSize > ItemCapacity)
+			{
+				size_t NewCap = ItemCapacity * 3 / 2 + 1;
+				if (NewCap < TotalSize) NewCap = TotalSize;
+				Reserve(NewCap);
+			}
+			BufferObject->Bind();
+			BufferObject->SetData(ItemCount * sizeof(T), Count * sizeof(T), &Items[0]);
+			ItemCount = TotalSize;
+		}
+
+		inline void PushBack(const std::vector<T> &items)
+		{
+			PushBack(items.data(), items.size());
+		}
+
+		inline void WatchForObjectChanged() noexcept
+		{
+			BufferObject.ObjectChanged = false;
+		}
+
+		inline bool CheckObjectChanged() const
+		{
+			return BufferObject.ObjectChanged;
+		}
+
+		inline void Bind()
+		{
+			BufferObject->Bind();
+		}
+
+		inline void Unbind()
+		{
+			BufferObject->Unbind();
+		}
+
+		inline const T operator [] (SizeType index) const
+		{
+			return GetItem(index);
+		}
+
+		inline void Flush()
+		{
+		}
+
+		template<typename T2> GLBufferNoCache<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
+		{
+			SizeType SizeBytes = Size() * sizeof(T);
+			if (SizeBytes % sizeof(T2))
+			{
+				throw BufferCastingError("Element count not divisible.");
+			}
+			SizeType UnitCount = SizeBytes / sizeof(T2);
+			GLBufferNoCache<T2> Ret(Type, Usage, UnitCount);
+			Ret.BufferObject = new GLBufferObject(Type, SizeBytes, Usage, BufferObject, SizeBytes);
+			Ret.ItemCount = UnitCount;
+			return Ret;
+		}
+
+		template<typename T2> GLBufferNoCache<T2> StaticCast(BufferType Type, BufferUsage Usage) const
+		{
+			SizeType Count = Size();
+			GLBuffer<T2> Ret(Type, Usage, Count);
+			Ret.Resize(Count);
+			Ret.BufferObject->Bind();
+			T2 *MapPtr = Ret.BufferObject->MapWO();
+			BufferObject->Bind();
+			for (SizeType i = 0; i < Count; i++)
+			{
+				MapPtr[i] = static_cast<T2>(GetItem(i));
+			}
+			Ret.BufferObject->Bind();
+			Ret.BufferObject->Unmap();
+			return Ret;
+		}
+
+		template<typename T2> GLBufferNoCache<T2> DynamicCast(BufferType Type, BufferUsage Usage) const
+		{
+			SizeType Count = Size();
+			GLBuffer<T2> Ret(Type, Usage, Count);
+			Ret.Resize(Count);
+			Ret.BufferObject->Bind();
+			T2 *MapPtr = Ret.BufferObject->MapWO();
+			BufferObject->Bind();
+			for (SizeType i = 0; i < Count; i++)
+			{
+				MapPtr[i] = dynamic_cast<T2>(GetItem(i));
+			}
+			Ret.BufferObject->Bind();
+			Ret.BufferObject->Unmap();
+			return Ret;
+		}
+
+		class GLBufferNoCacheWriter
+		{
+		protected:
+			GLBufferNoCache &Buffer;
+			DifferenceType Index;
+			T Value;
+
+		public:
+			GLBufferNoCacheWriter() = delete;
+			inline GLBufferNoCacheWriter(GLBufferNoCache &Buffer, DifferenceType Index) :
+				Buffer(Buffer), Index(Index), Value(Buffer.GetItem(static_cast<SizeType>(Index)))
+			{
+			}
+			inline operator T() const { return Value; }
+			inline GLBufferNoCacheWriter &operator =(const T &Other)
+			{
+				Value = Other;
+				Buffer.SetItem(Index, Value);
+				return *this;
+			}
+		};
+
+		inline GLBufferNoCacheWriter operator[] (SizeType index)
+		{
+			return GLBufferNoCacheWriter(*this, static_cast<DifferenceType>(index));
+		}
 	};
-
-	template<typename T>
-	template<typename T2>
-	GLBuffer<T2> GLBuffer<T>::ReinterpretCast(BufferType Type, BufferUsage Usage) const
-	{
-		GLBuffer<T2> Ret(Type, Usage);
-		SizeType SizeBytes = Size() * sizeof(T);
-		if (SizeBytes % sizeof(T2))
-		{
-			throw BufferCastingError("Element count not divisible.");
-		}
-		SizeType UnitCount = SizeBytes / sizeof(T2);
-		Ret.Resize(UnitCount);
-		std::memcpy(Ret.Contents.data(), Contents.data(), SizeBytes);
-		return Ret;
-	}
-
-	template<typename T>
-	template<typename T2>
-	GLBuffer<T2> GLBuffer<T>::StaticCast(BufferType Type, BufferUsage Usage) const
-	{
-		GLBuffer<T2> Ret(Type, Usage);
-		SizeType Count = Size();
-		Ret.Resize(Count);
-		for (SizeType i = 0; i < Count; i++)
-		{
-			Ret[i] = static_cast<T2>(Contents[i]);
-		}
-		return Ret;
-	}
-
-	template<typename T>
-	template<typename T2>
-	GLBuffer<T2> GLBuffer<T>::DynamicCast(BufferType Type, BufferUsage Usage) const
-	{
-		GLBuffer<T2> Ret(Type, Usage);
-		SizeType Count = Size();
-		Ret.Resize(Count);
-		for (SizeType i = 0; i < Count; i++)
-		{
-			Ret[i] = dynamic_cast<T2>(Contents[i]);
-		}
-		return Ret;
-	}
 }
