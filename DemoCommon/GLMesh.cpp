@@ -41,7 +41,7 @@ void GLVAO::Draw(MeshPrimitiveType PrimitiveType, GLsizei CommandCount) const
 void GLVAO::Draw(MeshPrimitiveType PrimitiveType, GLsizei VertexCount, GLsizei InstanceCount) const
 {
 	GLenum PT = static_cast<GLenum>(PrimitiveType);
-	if (InstanceCount <= 1) glDrawArrays(PT, 0, VertexCount);
+	if (!InstanceCount) glDrawArrays(PT, 0, VertexCount);
 	else glDrawArraysInstanced(PT, 0, InstanceCount, VertexCount);
 }
 
@@ -56,14 +56,14 @@ void GLVAO::DrawByElements(MeshPrimitiveType PrimitiveType, MeshElementType Elem
 {
 	GLenum PT = static_cast<GLenum>(PrimitiveType);
 	GLenum ET = static_cast<GLenum>(ElementType);
-	if (InstanceCount == 0) glDrawElements(PT, ElementCount, ET, nullptr);
+	if (!InstanceCount) glDrawElements(PT, ElementCount, ET, nullptr);
 	else glDrawElementsInstanced(PT, ElementCount, ET, nullptr, InstanceCount);
 }
 
 AttribDesc::AttribDesc(std::string Name, AttribType Type, GLsizei Offset, bool AsFloat, bool Normalize) :
 	Name(Name),
 	Type(Type),
-	UnitType(GLGetUnitType(Type)),
+	VarType(GLGetVarType(Type)),
 	Offset(Offset),
 	ColCount(GLGetNumCols(Type)),
 	RowCount(GLGetNumRows(Type)),
@@ -87,11 +87,11 @@ void AttribDesc::Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint 
 	GLint Location = GLVertexAttribLocation(Name);
 	if (Location < 0) return;
 	GLsizei CurOffset = Offset;
-	GLsizei RowSize = GLGetUnitLength(UnitType) * ColCount;
+	GLsizei RowSize = GLGetUnitLength(VarType) * ColCount;
 	for (GLint i = 0; i < RowCount; i++)
 	{
 		const void *PtrParam = reinterpret_cast<const void *>(static_cast<size_t>(CurOffset));
-		GLenum GLType = static_cast<GLenum>(UnitType);
+		GLenum GLType = static_cast<GLenum>(VarType);
 		glEnableVertexAttribArray(Location);
 		if (AsFloat) glVertexAttribPointer(Location, ColCount, GLType, Normalize, Stride, PtrParam);
 		else if (GLIsInteger(Type)) glVertexAttribIPointer(Location, ColCount, GLType, Stride, PtrParam);
