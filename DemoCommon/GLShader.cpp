@@ -60,7 +60,9 @@ constexpr GLUniformLocation::GLUniformLocation(GLint Location) :
 
 GLUniformLocation::GLUniformLocation(const GLchar *UniformName)
 {
+#if _DEBUG
 	if (!UsingProgram) throw std::logic_error("Must call GLShaderProgram::Use() first.");
+#endif
 	Location = glGetUniformLocation(UsingProgram, UniformName);
 }
 
@@ -81,7 +83,9 @@ constexpr GLVertexAttribLocation::GLVertexAttribLocation(GLint Location) :
 
 GLVertexAttribLocation::GLVertexAttribLocation(const GLchar *VertexAttribName)
 {
+#if _DEBUG
 	if (!UsingProgram) throw std::logic_error("Must call GLShaderProgram::Use() first.");
+#endif
 	Location = glGetAttribLocation(UsingProgram, VertexAttribName);
 }
 

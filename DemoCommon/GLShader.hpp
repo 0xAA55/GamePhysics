@@ -57,6 +57,12 @@ namespace GLRenderer
 		constexpr operator GLint() const;
 	};
 
+	struct ActiveUniform
+	{
+		std::string Name;
+		GLsizei Size;
+	};
+
 	class GLShaderProgram
 	{
 	protected:
