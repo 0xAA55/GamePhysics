@@ -3,6 +3,7 @@
 #include<unordered_map>
 #include<GLBuffer.hpp>
 #include<GLShader.hpp>
+#include<type_traits>
 namespace GLRenderer
 {
 	class AttribDesc;
@@ -63,20 +64,47 @@ namespace GLRenderer
 		void DrawByElements(MeshPrimitiveType PrimitiveType, MeshElementType ElementType, GLsizei VertexCount, GLsizei InstanceCount) const;
 	};
 
-	template<typename VertexType, typename InstanceType, MeshElementType ElementType = MeshElementType::UnsignedInt>
+	template<typename VertexType, typename InstanceType, MeshElementType ElementType = MeshElementType::UnsignedInt, bool VertexBufferUseCachedBuffer = true, bool IndexBufferUseCachedBuffer = true, bool InstanceBufferUseCachedBuffer = true, bool CommandBufferUseCachedBuffer = true>
 	class GLMesh
 	{
 	protected:
 		using IndexType = TypeOfElement<ElementType>;
-		using VertexBufferType = GLBuffer<VertexType>;
-		using IndexBufferType = GLBuffer<IndexType>;
-		using InstanceBufferType = GLBuffer<InstanceType>;
-		using CommandBufferType = GLBuffer<DrawCommand>;
+		using VertexBufferType = std::conditional_t<VertexBufferUseCachedBuffer, GLBuffer<VertexType>, GLBufferNoCache<VertexType>>;
+		using IndexBufferType = std::conditional_t<IndexBufferUseCachedBuffer, GLBuffer<IndexType>, GLBufferNoCache<IndexType>>;
+		using InstanceBufferType = std::conditional_t<InstanceBufferUseCachedBuffer, GLBuffer<InstanceType>, GLBufferNoCache<InstanceType>>;
+		using CommandBufferType = std::conditional_t<CommandBufferUseCachedBuffer, GLBuffer<DrawCommand>, GLBufferNoCache<DrawCommand>>;
 		using AttribDescArray = std::vector<AttribDesc>;
 		using VAOContainer = std::unordered_map<GLShaderProgram, GLVAO, GLShaderProgramHasher>;
 
 		VAOContainer VAOsForEachShader;
-		GLVAO& Describe(const GLShaderProgram &Shader);
+		GLVAO& Describe(const GLShaderProgram &Shader)
+		{
+			VertexBuffer.WatchForObjectChanged();
+			InstanceBuffer.WatchForObjectChanged();
+			VertexBuffer.Flush();
+			InstanceBuffer.Flush();
+			bool ShouldDescribe = VertexBuffer.CheckObjectChanged() || InstanceBuffer.CheckObjectChanged();
+			GLVAO &VAO = VAOsForEachShader[Shader];
+			if (!VAO.IsDescribed()) ShouldDescribe = true;
+			VAO.Bind();
+			if (ShouldDescribe)
+			{
+				if (VertexBuffer.Size())
+				{
+					VertexBuffer.Bind();
+					for (auto &it : VertexBufferFormat) it.Describe(Shader, sizeof(VertexType), 0);
+					VertexBuffer.Unbind();
+				}
+				if (InstanceBuffer.Size())
+				{
+					InstanceBuffer.Bind();
+					for (auto &it : InstanceBufferFormat) it.Describe(Shader, sizeof(InstanceType), 1);
+					InstanceBuffer.Unbind();
+				}
+				VAO.SetDescribed();
+			}
+			return VAO;
+		}
 
 	public:
 		VertexBufferType VertexBuffer;
@@ -137,42 +165,12 @@ namespace GLRenderer
 		}
 	};
 
-	template<typename VertexType, typename InstanceType, MeshElementType ElementType>
-	GLVAO &GLMesh<VertexType, InstanceType, ElementType>::Describe(const GLShaderProgram &Shader)
-	{
-		VertexBuffer.WatchForObjectChanged();
-		InstanceBuffer.WatchForObjectChanged();
-		VertexBuffer.Flush();
-		InstanceBuffer.Flush();
-		bool ShouldDescribe = VertexBuffer.CheckObjectChanged() || InstanceBuffer.CheckObjectChanged();
-		GLVAO &VAO = VAOsForEachShader[Shader];
-		if (!VAO.IsDescribed()) ShouldDescribe = true;
-		VAO.Bind();
-		if (ShouldDescribe)
-		{
-			if (VertexBuffer.Size())
-			{
-				VertexBuffer.Bind();
-				for (auto &it : VertexBufferFormat) it.Describe(Shader, sizeof(VertexType), 0);
-				VertexBuffer.Unbind();
-			}
-			if (InstanceBuffer.Size())
-			{
-				InstanceBuffer.Bind();
-				for (auto &it : InstanceBufferFormat) it.Describe(Shader, sizeof(InstanceType), 1);
-				InstanceBuffer.Unbind();
-			}
-			VAO.SetDescribed();
-		}
-		return VAO;
-	}
-
 	class AttribDesc
 	{
 	public:
 		std::string Name;
 		AttribType Type;
-		AttribUnitType UnitType;
+		GLVarType VarType;
 		GLsizei Offset;
 		int ColCount; // e.g. vec2, vec3, vec4
 		int RowCount; // e.g. mat4x2, mat4x3, mat4x4
