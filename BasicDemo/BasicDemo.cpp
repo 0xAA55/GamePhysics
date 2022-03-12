@@ -36,7 +36,7 @@ public:
 	GPWorld World;
 	double LastUpdateTime;
 	GLShaderProgram BoxShader;
-	GLMesh<Vertex3D, mat4, MeshElementType::UnsignedByte> BoxMesh;
+	GLMesh<Vertex3D, mat4, MeshElementType::UnsignedByte, false, false, false, false> BoxMesh;
 	vec3 CameraPos;
 	vec3 CamYawPitchRoll;
 
