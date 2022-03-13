@@ -732,6 +732,14 @@ namespace GLRenderer
 		{
 		}
 
+		// returns actual copied data size
+		inline SizeType GetAllData(T *Buffer, SizeType BufferSize)
+		{
+			SizeType CopySize = min(BufferSize, Size() * sizeof(T));
+			BufferObject->GetData(0, CopySize, Buffer);
+			return CopySize;
+		}
+
 		inline void ChangeBufferType(BufferType Type)
 		{
 			this->Type = Type;
