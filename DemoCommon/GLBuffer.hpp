@@ -466,6 +466,11 @@ namespace GLRenderer
 			}
 		}
 
+		inline void ChangeBufferType(BufferType Type)
+		{
+			this->Type = Type;
+		}
+
 		template<typename T2> GLBuffer<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
 		{
 			GLBuffer<T2> Ret(Type, Usage);
@@ -725,6 +730,11 @@ namespace GLRenderer
 
 		inline void Flush()
 		{
+		}
+
+		inline void ChangeBufferType(BufferType Type)
+		{
+			this->Type = Type;
 		}
 
 		template<typename T2> GLBufferNoCache<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
