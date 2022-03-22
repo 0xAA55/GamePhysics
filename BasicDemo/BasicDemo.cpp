@@ -1,6 +1,7 @@
 #include<AppFrame.hpp>
 #include<GLRenderer.hpp>
 #include<GamePhysics.hpp>
+#include<iostream>
 
 #ifdef _WIN32
 #include<Windows.h>
@@ -36,7 +37,7 @@ public:
 	GPWorld World;
 	double LastUpdateTime;
 	GLShaderProgram BoxShader;
-	GLMesh<Vertex3D, mat4, MeshElementType::UnsignedByte, false, false, false, false> BoxMesh;
+	GLMesh<Vertex3D, mat4, MeshElementType::UnsignedByte> BoxMesh;
 	vec3 CameraPos;
 	vec3 CamYawPitchRoll;
 
@@ -71,9 +72,29 @@ public:
 		CameraPos(0, 0, -5),
 		CamYawPitchRoll(0, 0, 0)
 	{
-		BoxMesh.VertexBufferFormat.push_back(AttribDesc("Position", AttribType::Vec3, 0));
-		BoxMesh.VertexBufferFormat.push_back(AttribDesc("Normal", AttribType::Vec3, 3 * sizeof(GLfloat)));
-		BoxMesh.InstanceBufferFormat.push_back(AttribDesc("Transform", AttribType::Mat4, 0));
+		BoxMesh.VertexBufferFormat.push_back(AttribDesc("Position", AttribType::Vec3));
+		BoxMesh.VertexBufferFormat.push_back(AttribDesc("Normal", AttribType::Vec3));
+		BoxMesh.InstanceBufferFormat.push_back(AttribDesc("Transform", AttribType::Mat4));
+
+		std::cout
+			<< "================" << std::endl
+			<< "Active Attribs:" << std::endl
+			<< "================" << std::endl;
+		auto Attribs = BoxShader.GetActiveAttribs();
+		for (auto &it : Attribs)
+		{
+			std::cout << GLAttribTypeToString(it.Type) << " " << it.Name << "; // " << it.Size << std::endl;
+		}
+
+		std::cout
+			<< "================" << std::endl
+			<< "Active Uniforms:" << std::endl
+			<< "================" << std::endl;
+		auto Uniforms = BoxShader.GetActiveUniforms();
+		for (auto &it : Uniforms)
+		{
+			std::cout << GLUniformTypeToString(it.Type) << " " << it.Name << "; // " << it.Size << std::endl;
+		}
 	}
 
 	void OnLoadResources() noexcept(false) override
@@ -122,27 +143,13 @@ public:
 		};
 		BoxMesh.VertexBuffer.PushBack(Vertices, countof(Vertices));
 		
+#define FACE(B) 0 + B, 1 + B, 2 + B, 1 + B, 3 + B, 2 + B
 		GLubyte Indices[] =
 		{
-#define B 0
-			0 + B, 1 + B, 2 + B, 1 + B, 3 + B, 2 + B,
-#undef B
-#define B 4
-			0 + B, 1 + B, 2 + B, 1 + B, 3 + B, 2 + B,
-#undef B
-#define B 8
-			0 + B, 1 + B, 2 + B, 1 + B, 3 + B, 2 + B,
-#undef B
-#define B 12
-			0 + B, 1 + B, 2 + B, 1 + B, 3 + B, 2 + B,
-#undef B
-#define B 16
-			0 + B, 1 + B, 2 + B, 1 + B, 3 + B, 2 + B,
-#undef B
-#define B 20
-			0 + B, 1 + B, 2 + B, 1 + B, 3 + B, 2 + B
-#undef B
+			FACE(0), FACE(4), FACE(8),
+			FACE(12), FACE(16), FACE(20)
 		};
+#undef FACE
 		BoxMesh.IndexBuffer.PushBack(Indices, countof(Indices));
 
 		BoxMesh.InstanceBuffer.PushBack(mat4(
