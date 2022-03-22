@@ -72,9 +72,9 @@ public:
 		CameraPos(0, 0, -5),
 		CamYawPitchRoll(0, 0, 0)
 	{
-		BoxMesh.VertexBufferFormat.push_back(AttribDesc("Position", AttribType::Vec3));
-		BoxMesh.VertexBufferFormat.push_back(AttribDesc("Normal", AttribType::Vec3));
-		BoxMesh.InstanceBufferFormat.push_back(AttribDesc("Transform", AttribType::Mat4));
+		BoxMesh.VertexBufferFormat.push_back(AttribDesc("Position", AttribTypeEnum::Vec3));
+		BoxMesh.VertexBufferFormat.push_back(AttribDesc("Normal", AttribTypeEnum::Vec3));
+		BoxMesh.InstanceBufferFormat.push_back(AttribDesc("Transform", AttribTypeEnum::Mat4));
 
 		std::cout
 			<< "================" << std::endl
