@@ -65,7 +65,14 @@ namespace GLRenderer
 		void DrawByElements(MeshPrimitiveType PrimitiveType, MeshElementType ElementType, GLsizei VertexCount, GLsizei InstanceCount) const;
 	};
 
-	template<typename VertexType, typename InstanceType, MeshElementType ElementType = MeshElementType::UnsignedInt, bool VertexBufferUseCachedBuffer = true, bool IndexBufferUseCachedBuffer = true, bool InstanceBufferUseCachedBuffer = true, bool CommandBufferUseCachedBuffer = true>
+	template<
+		typename VertexType,
+		typename InstanceType,
+		MeshElementType ElementType = MeshElementType::UnsignedInt,
+		bool VertexBufferUseCachedBuffer = true,
+		bool IndexBufferUseCachedBuffer = true,
+		bool InstanceBufferUseCachedBuffer = true,
+		bool CommandBufferUseCachedBuffer = true>
 	class GLMesh
 	{
 	protected:
@@ -137,6 +144,33 @@ namespace GLRenderer
 		{
 		}
 
+		GLMesh(MeshPrimitiveType PrimitiveType, const std::vector<VertexType> &VertexData) :
+			PrimitiveType(PrimitiveType),
+			VertexBuffer(BufferType::ArrayBuffer, BufferUsage::StaticDraw, VertexData),
+			IndexBuffer(BufferType::ElementArrayBuffer, BufferUsage::StaticDraw),
+			InstanceBuffer(BufferType::ArrayBuffer, BufferUsage::StreamDraw),
+			CommandBuffer(BufferType::DrawIndirectBuffer, BufferUsage::StaticDraw)
+		{
+		}
+
+		GLMesh(MeshPrimitiveType PrimitiveType, const std::vector<IndexType> &IndexData) :
+			PrimitiveType(PrimitiveType),
+			VertexBuffer(BufferType::ArrayBuffer, BufferUsage::StaticDraw),
+			IndexBuffer(BufferType::ElementArrayBuffer, BufferUsage::StaticDraw, IndexData),
+			InstanceBuffer(BufferType::ArrayBuffer, BufferUsage::StreamDraw),
+			CommandBuffer(BufferType::DrawIndirectBuffer, BufferUsage::StaticDraw)
+		{
+		}
+
+		GLMesh(MeshPrimitiveType PrimitiveType, const std::vector<VertexType> &VertexData, const std::vector<IndexType> &IndexData) :
+			PrimitiveType(PrimitiveType),
+			VertexBuffer(BufferType::ArrayBuffer, BufferUsage::StaticDraw, VertexData),
+			IndexBuffer(BufferType::ElementArrayBuffer, BufferUsage::StaticDraw, IndexData),
+			InstanceBuffer(BufferType::ArrayBuffer, BufferUsage::StreamDraw),
+			CommandBuffer(BufferType::DrawIndirectBuffer, BufferUsage::StaticDraw)
+		{
+		}
+
 		GLMesh(const GLMesh &CopyFrom) :
 			PrimitiveType(CopyFrom.PrimitiveType),
 			VertexBufferFormat(CopyFrom.VertexBufferFormat),
@@ -197,4 +231,14 @@ namespace GLRenderer
 		void Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint AVD) const;
 		inline GLsizei GetSizeBytes() const { return GLGetNumUnits(Type) * GLGetUnitLength(Type); }
 	};
+
+	class WaveFrontObjVertex
+	{
+		vec3 Position;
+		vec3 Normal;
+		vec2 TexCoord;
+	};
+
+	template <typename InstanceType, MeshElementType ElementType = MeshElementType::UnsignedInt, bool VertexBufferUseCachedBuffer = true, bool IndexBufferUseCachedBuffer = true, bool InstanceBufferUseCachedBuffer = true, bool CommandBufferUseCachedBuffer = true>
+	using GLObjMesh = GLMesh<WaveFrontObjVertex, InstanceType, ElementType, VertexBufferUseCachedBuffer, IndexBufferUseCachedBuffer, InstanceBufferUseCachedBuffer, CommandBufferUseCachedBuffer>;
 }
