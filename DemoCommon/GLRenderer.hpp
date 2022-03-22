@@ -31,6 +31,8 @@ namespace GLRenderer
 	class Renderer
 	{
 	public:
+		Renderer() = delete;
+
 		static void ClearScreen(GLclampf Red, GLclampf Green, GLclampf Blue, GLclampf Alpha, bool ClearZ = true, bool ClearStencil = true);
 		static void SetViewport(GLint x, GLint y, GLsizei w, GLsizei h);
 		static void DefineFrontFace(FaceType ft = FaceType::CCW);
