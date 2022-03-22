@@ -54,10 +54,11 @@ namespace GLRenderer
 		GLVAO();
 		~GLVAO();
 
-		operator GLuint() const;
+		inline operator GLuint() const { return VAO; }
+		inline bool IsDescribed() const { return Described; }
+		inline void SetDescribed() { Described = true; }
+
 		void Bind() const;
-		bool IsDescribed() const;
-		void SetDescribed();
 		void Draw(MeshPrimitiveType PrimitiveType, GLsizei CommandCount) const;
 		void Draw(MeshPrimitiveType PrimitiveType, GLsizei VertexCount, GLsizei InstanceCount) const;
 		void DrawByElements(MeshPrimitiveType PrimitiveType, MeshElementType ElementType, GLsizei CommandCount) const;
@@ -91,14 +92,26 @@ namespace GLRenderer
 			{
 				if (VertexBuffer.Size())
 				{
+					GLsizei LastOffset = 0;
 					VertexBuffer.Bind();
-					for (auto &it : VertexBufferFormat) it.Describe(Shader, sizeof(VertexType), 0);
+					for (auto &it : VertexBufferFormat)
+					{
+						if (it.Offset == -1) it.Offset = LastOffset;
+						LastOffset = it.Offset + it.GetSizeBytes();
+						it.Describe(Shader, sizeof(VertexType), 0);
+					}
 					VertexBuffer.Unbind();
 				}
 				if (InstanceBuffer.Size())
 				{
+					GLsizei LastOffset = 0;
 					InstanceBuffer.Bind();
-					for (auto &it : InstanceBufferFormat) it.Describe(Shader, sizeof(InstanceType), 1);
+					for (auto &it : InstanceBufferFormat)
+					{
+						if (it.Offset == -1) it.Offset = LastOffset;
+						LastOffset = it.Offset + it.GetSizeBytes();
+						it.Describe(Shader, sizeof(InstanceType), 1);
+					}
 					InstanceBuffer.Unbind();
 				}
 				VAO.SetDescribed();
@@ -171,16 +184,17 @@ namespace GLRenderer
 		std::string Name;
 		AttribType Type;
 		GLVarType VarType;
-		GLsizei Offset;
+		GLsizei Offset; // If `Offset` is -1, it means the offset should be calculated automatically.
 		int ColCount; // e.g. vec2, vec3, vec4
 		int RowCount; // e.g. mat4x2, mat4x3, mat4x4
 		int Length;
 		bool AsFloat;
 		bool Normalize;
 
-		AttribDesc(std::string Name, AttribType Type, GLsizei Offset, bool AsFloat = true, bool Normalize = false);
-		AttribDesc(std::string Name, std::string Type, GLsizei Offset, bool AsFloat = true, bool Normalize = false);
+		AttribDesc(std::string Name, AttribType Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
+		AttribDesc(std::string Name, std::string Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
 
 		void Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint AVD) const;
+		inline GLsizei GetSizeBytes() const { return GLGetNumUnits(Type) * GLGetUnitLength(Type); }
 	};
 }
