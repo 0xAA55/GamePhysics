@@ -564,7 +564,7 @@ namespace GLRenderer
         return GLGetUnitLength(GLGetVarType(Type));
     }
 
-    const char *GLAttribTypeToString(const UniformType Type)
+    const char *GLUniformTypeToString(const UniformType Type)
     {
         switch (Type)
         {
