@@ -72,6 +72,7 @@ namespace GLRenderer
 
 		void Bind() const;
 		void Unbind() const;
+		bool IsBind() const;
 	};
 
 	class GLBufferOwnership
@@ -171,15 +172,16 @@ namespace GLRenderer
 	class GLBufferConstIterator;
 
 	template<typename T>
-	class GLBuffer;
+	class GLBufferVector;
 
 	template<typename T>
-	class GLBufferNoCache;
+	class GLBufferVectorNC;
 
 	template<typename T>
-	class GLBuffer
+	class GLBufferVector
 	{
 	public:
+		using VectorWithoutCache = GLBufferVectorNC<T>;
 		using VectorType = std::vector<T>;
 		using BoolVecType = std::vector<bool>;
 		using SizeType = typename VectorType::size_type;
@@ -211,8 +213,8 @@ namespace GLRenderer
 		BufferType Type;
 		const SizeType FlushingGap = 16;
 
-		GLBuffer() = delete;
-		GLBuffer(BufferType Type, BufferUsage Usage) :
+		GLBufferVector() = delete;
+		GLBufferVector(BufferType Type, BufferUsage Usage) :
 			Type(Type),
 			Usage(Usage),
 			BufferObject(nullptr),
@@ -224,7 +226,7 @@ namespace GLRenderer
 		{
 		}
 
-		GLBuffer(const GLBuffer &CopyFrom) :
+		GLBufferVector(const GLBufferVector &CopyFrom) :
 			Type(CopyFrom.Type),
 			Usage(CopyFrom.Usage),
 			BufferObject(CopyFrom.BufferObject),
@@ -236,7 +238,7 @@ namespace GLRenderer
 		{
 		}
 
-		GLBuffer(BufferType Type, BufferUsage Usage, const std::vector<T>& Data) :
+		GLBufferVector(BufferType Type, BufferUsage Usage, const std::vector<T>& Data) :
 			Type(Type),
 			Usage(Usage),
 			BufferObject(nullptr),
@@ -250,7 +252,7 @@ namespace GLRenderer
 			Updated.resize(Size(), true);
 		}
 
-		GLBuffer &operator =(const GLBuffer &CopyFrom)
+		GLBufferVector &operator =(const GLBufferVector &CopyFrom)
 		{
 			Type = CopyFrom.Type;
 			Usage = CopyFrom.Usage;
@@ -492,9 +494,9 @@ namespace GLRenderer
 			return BufferObject.Get();
 		}
 
-		template<typename T2> GLBuffer<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
+		template<typename T2> GLBufferVector<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
 		{
-			GLBuffer<T2> Ret(Type, Usage);
+			GLBufferVector<T2> Ret(Type, Usage);
 			SizeType SizeBytes = Size() * sizeof(T);
 			if (SizeBytes % sizeof(T2))
 			{
@@ -507,9 +509,9 @@ namespace GLRenderer
 			return Ret;
 		}
 
-		template<typename T2> GLBuffer<T2> StaticCast(BufferType Type, BufferUsage Usage) const
+		template<typename T2> GLBufferVector<T2> StaticCast(BufferType Type, BufferUsage Usage) const
 		{
-			GLBuffer<T2> Ret(Type, Usage);
+			GLBufferVector<T2> Ret(Type, Usage);
 			SizeType Count = Size();
 			Ret.Resize(Count);
 			for (SizeType i = 0; i < Count; i++)
@@ -520,9 +522,9 @@ namespace GLRenderer
 			return Ret;
 		}
 
-		template<typename T2> GLBuffer<T2> DynamicCast(BufferType Type, BufferUsage Usage) const
+		template<typename T2> GLBufferVector<T2> DynamicCast(BufferType Type, BufferUsage Usage) const
 		{
-			GLBuffer<T2> Ret(Type, Usage);
+			GLBufferVector<T2> Ret(Type, Usage);
 			SizeType Count = Size();
 			Ret.Resize(Count);
 			for (SizeType i = 0; i < Count; i++)
@@ -537,7 +539,7 @@ namespace GLRenderer
 	template<typename T>
 	class GLBufferIterator
 	{
-		using Container = GLBuffer<T>;
+		using Container = GLBufferVector<T>;
 		using Iterator = GLBufferIterator<T>;
 		using SizeType = typename Container::SizeType;
 		using DifferenceType = typename Container::DifferenceType;
@@ -560,7 +562,7 @@ namespace GLRenderer
 	template<typename T>
 	class GLBufferConstIterator
 	{
-		using Container = GLBuffer<T>;
+		using Container = GLBufferVector<T>;
 		using Iterator = GLBufferConstIterator<T>;
 		using SizeType = typename Container::SizeType;
 		using DifferenceType = typename Container::DifferenceType;
@@ -581,15 +583,12 @@ namespace GLRenderer
 	};
 
 	template<typename T>
-	class GLBufferNoCache;
-
-	template<typename T>
-	class GLBufferNoCache
+	class GLBufferVectorNC
 	{
 	public:
-		using Cached = GLBuffer<T>;
-		using SizeType = typename Cached::SizeType;
-		using DifferenceType = typename Cached::DifferenceType;
+		using VectorWithCache = GLBufferVector<T>;
+		using SizeType = typename VectorWithCache::SizeType;
+		using DifferenceType = typename VectorWithCache::DifferenceType;
 
 	protected:
 		BufferUsage Usage;
@@ -601,8 +600,8 @@ namespace GLRenderer
 	public:
 		BufferType Type;
 
-		GLBufferNoCache() = delete;
-		GLBufferNoCache(BufferType Type, BufferUsage Usage, SizeType InitCapacity = 32) :
+		GLBufferVectorNC() = delete;
+		GLBufferVectorNC(BufferType Type, BufferUsage Usage, SizeType InitCapacity = 32) :
 			Type(Type),
 			Usage(Usage),
 			ItemCount(0),
@@ -610,7 +609,7 @@ namespace GLRenderer
 			BufferObject(new GLBufferObject(Type, InitCapacity * sizeof(T), Usage))
 		{
 		}
-		GLBufferNoCache(BufferType Type, BufferUsage Usage, const std::vector<T>& Data) :
+		GLBufferVectorNC(BufferType Type, BufferUsage Usage, const std::vector<T>& Data) :
 			Type(Type),
 			Usage(Usage),
 			ItemCount(Data.size()),
@@ -620,7 +619,7 @@ namespace GLRenderer
 			BufferObject->Bind();
 			BufferObject->SetData(0, ItemCount * sizeof(T), Data.data());
 		}
-		GLBufferNoCache(const GLBufferNoCache &From) :
+		GLBufferVectorNC(const GLBufferVectorNC &From) :
 			Type(From.Type),
 			Usage(From.Usage),
 			ItemCount(From.Size()),
@@ -628,7 +627,7 @@ namespace GLRenderer
 			BufferObject(new GLBufferObject(From.Type, From.Capacity() * sizeof(T), From.Usage, *From.BufferObject))
 		{
 		}
-		GLBufferNoCache(Cached &From) :
+		GLBufferVectorNC(VectorWithCache &From) :
 			Type(From.Type),
 			Usage(From.GetUsage()),
 			ItemCount(From.Size()),
@@ -781,7 +780,7 @@ namespace GLRenderer
 			return CopySize;
 		}
 
-		template<typename T2> GLBufferNoCache<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
+		template<typename T2> GLBufferVectorNC<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
 		{
 			SizeType SizeBytes = Size() * sizeof(T);
 			if (SizeBytes % sizeof(T2))
@@ -789,16 +788,16 @@ namespace GLRenderer
 				throw BufferCastingError("Element count not divisible.");
 			}
 			SizeType UnitCount = SizeBytes / sizeof(T2);
-			GLBufferNoCache<T2> Ret(Type, Usage, UnitCount);
+			GLBufferVectorNC<T2> Ret(Type, Usage, UnitCount);
 			Ret.BufferObject = new GLBufferObject(Type, SizeBytes, Usage, BufferObject, SizeBytes);
 			Ret.ItemCount = UnitCount;
 			return Ret;
 		}
 
-		template<typename T2> GLBufferNoCache<T2> StaticCast(BufferType Type, BufferUsage Usage) const
+		template<typename T2> GLBufferVectorNC<T2> StaticCast(BufferType Type, BufferUsage Usage) const
 		{
 			SizeType Count = Size();
-			GLBuffer<T2> Ret(Type, Usage, Count);
+			GLBufferVector<T2> Ret(Type, Usage, Count);
 			Ret.Resize(Count);
 			Ret.BufferObject->Bind();
 			T2 *MapPtr = Ret.BufferObject->MapWO();
@@ -812,10 +811,10 @@ namespace GLRenderer
 			return Ret;
 		}
 
-		template<typename T2> GLBufferNoCache<T2> DynamicCast(BufferType Type, BufferUsage Usage) const
+		template<typename T2> GLBufferVectorNC<T2> DynamicCast(BufferType Type, BufferUsage Usage) const
 		{
 			SizeType Count = Size();
-			GLBuffer<T2> Ret(Type, Usage, Count);
+			GLBufferVector<T2> Ret(Type, Usage, Count);
 			Ret.Resize(Count);
 			Ret.BufferObject->Bind();
 			T2 *MapPtr = Ret.BufferObject->MapWO();
@@ -832,13 +831,13 @@ namespace GLRenderer
 		class GLBufferNoCacheWriter
 		{
 		protected:
-			GLBufferNoCache &Buffer;
+			GLBufferVectorNC &Buffer;
 			DifferenceType Index;
 			T Value;
 
 		public:
 			GLBufferNoCacheWriter() = delete;
-			inline GLBufferNoCacheWriter(GLBufferNoCache &Buffer, DifferenceType Index) :
+			inline GLBufferNoCacheWriter(GLBufferVectorNC &Buffer, DifferenceType Index) :
 				Buffer(Buffer), Index(Index), Value(Buffer.GetItem(static_cast<SizeType>(Index)))
 			{
 			}
