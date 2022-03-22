@@ -196,7 +196,21 @@ namespace GLRenderer
 
     enum class TextureFormatEnum
     {
-        R = 0x1903
+        R = 0x1903,
+        RG = 0x8227,
+        RGB = 0x1907,
+        BGR = 0x80E0,
+        RGBA = 0x1908,
+        BGRA = 0x80E1,
+        RI = 0x8D94,
+        RGI = 0x8228,
+        RGBI = 0x8D98,
+        BGRI = 0x8D9A,
+        RGBAI = 0x8D99,
+        BGRAI = 0x8D9B,
+        StencilIndex = 0x1901,
+        Depth = 0x1902,
+        DepthStencil = 0x84F9
     };
 
     enum class TextureInternalFormatEnum
@@ -267,7 +281,34 @@ namespace GLRenderer
         RGBA16I = 0x8D88,
         RGBA16UI = 0x8D76,
         RGBA32I = 0x8D82,
-        RGBA32UI = 0x8D70
+        RGBA32UI = 0x8D70,
+        Depth16 = 0x81A5,
+        Depth24 = 0x81A6,
+        Depth32 = 0x81A7
+    };
+
+    enum class TextureDataTypeEnum
+    {
+        Byte = 0x1400,
+        UnsignedByte = 0x1401,
+        Short = 0x1402,
+        UnsignedShort = 0x1403,
+        Int = 0x1404,
+        UnsignedInt = 0x1405,
+        HalfFloat = 0x140B,
+        Float = 0x1406,
+        UnsignedByte_3_3_2 = 0x8032,
+        UnsignedShort_5_6_5 = 0x8363,
+        UnsignedShort_4_4_4_4 = 0x8033,
+        UnsignedShort_5_5_5_1 = 0x8034,
+        UnsignedInt_8_8_8_8 = 0x8035,
+        UnsignedInt_10_10_10_2 = 0x8036,
+        UnsignedByte_2_3_3_Rev = 0x8362,
+        UnsignedShort_5_6_5_Rev = 0x8364,
+        UnsignedShort_4_4_4_4_Rev = 0x8365,
+        UnsignedShort_1_5_5_5_Rev = 0x8366,
+        UnsignedInt_8_8_8_8_Rev = 0x8367,
+        UnsignedInt_2_10_10_10_Rev = 0x8368
     };
 
     template<AttribTypeEnum Type> struct TypeOfAttrib_s;
@@ -335,7 +376,14 @@ namespace GLRenderer
     UniformTypeEnum GLStringToUniformType(std::string str);
 
     TextureInternalFormatEnum GLGetBaseInternalFormat(TextureInternalFormatEnum Format);
-    TextureFormat GLGetTextureFormat(TextureInternalFormatEnum Format);
+    TextureFormatEnum GLGetTextureFormat(TextureInternalFormatEnum Format, bool BGR = false);
+    GLsizei GLGetChannelCount(TextureFormatEnum Format);
+    GLsizei GLGetTexelSize(TextureFormatEnum Format, TextureDataTypeEnum DataType);
+
+    template<typename T> inline T CalcBitmapPitch(T Width, T BPP, int AlignSize = 4)
+    {
+        return ((Width * BPP - 1) / (AlignSize * 8) + 1) * AlignSize;
+    }
 
     class InvalidUsageException : public std::runtime_error
     {
