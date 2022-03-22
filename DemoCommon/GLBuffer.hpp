@@ -188,7 +188,6 @@ namespace GLRenderer
 		using ConstIterator = GLBufferConstIterator<T>;
 
 	protected:
-		BufferType Type;
 		BufferUsage Usage;
 
 		GLBufferOwnership BufferObject;
@@ -209,6 +208,7 @@ namespace GLRenderer
 		}
 
 	public:
+		BufferType Type;
 		const SizeType FlushingGap = 16;
 
 		GLBuffer() = delete;
@@ -262,6 +262,7 @@ namespace GLRenderer
 			Updated_MinIndex = CopyFrom.Updated_MinIndex;
 			Updated_MaxIndex = CopyFrom.Updated_MaxIndex;
 			Flushed = CopyFrom.Flushed;
+			return *this;
 		}
 
 		inline void SetUpdated(DifferenceType index)
@@ -308,21 +309,21 @@ namespace GLRenderer
 		{
 			Contents.resize(Count);
 			Updated.resize(Count, true);
-			BufferObject = new GLBufferObject(BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
+			BufferObject = new GLBufferObject(*BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
 		}
 
 		inline void Resize(SizeType Count, const T& Value)
 		{
 			Contents.resize(Count, Value);
 			Updated.resize(Count, true);
-			BufferObject = new GLBufferObject(BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
+			BufferObject = new GLBufferObject(*BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
 		}
 
 		inline void Reserve(SizeType NewCapacity)
 		{
 			Contents.reserve(NewCapacity);
 			Updated.reserve(NewCapacity);
-			BufferObject = new GLBufferObject(BufferObject, Capacity() * sizeof(T), Size() * sizeof(T));
+			BufferObject = new GLBufferObject(*BufferObject, Capacity() * sizeof(T), Size() * sizeof(T));
 		}
 
 		inline void Clear()
@@ -407,6 +408,11 @@ namespace GLRenderer
 			return Contents[index];
 		}
 
+		inline BufferUsage GetUsage() const
+		{
+			return Usage;
+		}
+
 		void Flush()
 		{
 			if (Flushed) return;
@@ -480,9 +486,10 @@ namespace GLRenderer
 			}
 		}
 
-		inline void ChangeBufferType(BufferType Type)
+		GLBufferObject *GetBufferObject()
 		{
-			this->Type = Type;
+			Flush();
+			return BufferObject.Get();
 		}
 
 		template<typename T2> GLBuffer<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
@@ -585,7 +592,6 @@ namespace GLRenderer
 		using DifferenceType = typename Cached::DifferenceType;
 
 	protected:
-		BufferType Type;
 		BufferUsage Usage;
 
 		GLBufferOwnership BufferObject;
@@ -593,6 +599,8 @@ namespace GLRenderer
 		SizeType ItemCapacity;
 
 	public:
+		BufferType Type;
+
 		GLBufferNoCache() = delete;
 		GLBufferNoCache(BufferType Type, BufferUsage Usage, SizeType InitCapacity = 32) :
 			Type(Type),
@@ -617,17 +625,16 @@ namespace GLRenderer
 			Usage(From.Usage),
 			ItemCount(From.Size()),
 			ItemCapacity(From.Capacity()),
-			BufferObject(new GLBufferObject(From))
+			BufferObject(new GLBufferObject(From.Type, From.Capacity() * sizeof(T), From.Usage, *From.BufferObject))
 		{
 		}
 		GLBufferNoCache(Cached &From) :
 			Type(From.Type),
-			Usage(From.Usage),
+			Usage(From.GetUsage()),
 			ItemCount(From.Size()),
 			ItemCapacity(From.Capacity())
 		{
-			From.Flush();
-			BufferObject = From.BufferObject;
+			BufferObject = new GLBufferObject(From.Type, From.Capacity() * sizeof(T), From.GetUsage(), *From.GetBufferObject());
 		}
 
 		inline SizeType Size() const noexcept
@@ -752,8 +759,18 @@ namespace GLRenderer
 			return GetItem(index);
 		}
 
+		inline BufferUsage GetUsage() const
+		{
+			return Usage;
+		}
+
 		inline void Flush()
 		{
+		}
+
+		GLBufferObject *GetBufferObject()
+		{
+			return BufferObject.Get();
 		}
 
 		// returns actual copied data size
@@ -762,11 +779,6 @@ namespace GLRenderer
 			SizeType CopySize = min(BufferSize, Size() * sizeof(T));
 			BufferObject->GetData(0, CopySize, Buffer);
 			return CopySize;
-		}
-
-		inline void ChangeBufferType(BufferType Type)
-		{
-			this->Type = Type;
 		}
 
 		template<typename T2> GLBufferNoCache<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
