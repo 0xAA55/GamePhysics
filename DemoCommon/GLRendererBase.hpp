@@ -34,7 +34,7 @@ namespace GLRenderer
         seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
     }
 
-    enum class GLVarType
+    enum class VarTypeEnum
     {
         Unknown = 0,
         Bool = 0x8B56,
@@ -45,7 +45,7 @@ namespace GLRenderer
     };
 
     // Each has it's corresponding OpenGL constant name
-    enum class AttribType
+    enum class AttribTypeEnum
     {
         Unknown = 0,
         Float = 0x1406,
@@ -84,7 +84,7 @@ namespace GLRenderer
         DMat4x3 = 0x8F4E
     };
 
-    enum class UniformType
+    enum class UniformTypeEnum
     {
         Unknown = 0,
         Float = 0x1406,
@@ -194,7 +194,12 @@ namespace GLRenderer
         UIntAtomicCounter = 0x92DB
     };
 
-    enum class TextureInternalFormat
+    enum class TextureFormatEnum
+    {
+        R = 0x1903
+    };
+
+    enum class TextureInternalFormatEnum
     {
         R = 0x1903,
         RG = 0x8227,
@@ -265,73 +270,76 @@ namespace GLRenderer
         RGBA32UI = 0x8D70
     };
 
-    template<AttribType Type> struct TypeOfAttrib_s;
-    template<> struct TypeOfAttrib_s<AttribType::Unknown> { using Type = void; using BaseType = void; };
-    template<> struct TypeOfAttrib_s<AttribType::Float> { using Type = GLfloat; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Vec2> { using Type = vec2; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Vec3> { using Type = vec3; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Vec4> { using Type = vec4; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Mat2> { using Type = mat2; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Mat3> { using Type = mat3; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Mat4> { using Type = mat4; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Mat2x3> { using Type = mat2x3; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Mat2x4> { using Type = mat2x4; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Mat3x2> { using Type = mat3x2; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Mat3x4> { using Type = mat3x4; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Mat4x2> { using Type = mat4x2; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Mat4x3> { using Type = mat4x3; using BaseType = GLfloat; };
-    template<> struct TypeOfAttrib_s<AttribType::Int> { using Type = GLint; using BaseType = GLint; };
-    template<> struct TypeOfAttrib_s<AttribType::IVec2> { using Type = ivec2; using BaseType = GLint; };
-    template<> struct TypeOfAttrib_s<AttribType::IVec3> { using Type = ivec3; using BaseType = GLint; };
-    template<> struct TypeOfAttrib_s<AttribType::IVec4> { using Type = ivec4; using BaseType = GLint; };
-    template<> struct TypeOfAttrib_s<AttribType::UInt> { using Type = GLuint; using BaseType = GLuint; };
-    template<> struct TypeOfAttrib_s<AttribType::UVec2> { using Type = uvec2; using BaseType = GLuint; };
-    template<> struct TypeOfAttrib_s<AttribType::UVec3> { using Type = uvec3; using BaseType = GLuint; };
-    template<> struct TypeOfAttrib_s<AttribType::UVec4> { using Type = uvec4; using BaseType = GLuint; };
-    template<> struct TypeOfAttrib_s<AttribType::Double> { using Type = GLdouble; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DVec2> { using Type = dvec2; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DVec3> { using Type = dvec3; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DVec4> { using Type = dvec4; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DMat2> { using Type = dmat2; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DMat3> { using Type = dmat3; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DMat4> { using Type = dmat4; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DMat2x3> { using Type = dmat2x3; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DMat2x4> { using Type = dmat2x4; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DMat3x2> { using Type = dmat3x2; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DMat3x4> { using Type = dmat3x4; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DMat4x2> { using Type = dmat4x2; using BaseType = GLdouble; };
-    template<> struct TypeOfAttrib_s<AttribType::DMat4x3> { using Type = dmat4x3; using BaseType = GLdouble; };
-    template<AttribType Type> using TypeOfAttrib = typename TypeOfAttrib_s<Type>::Type;
-    template<AttribType Type> using BaseTypeOfAttrib = typename TypeOfAttrib_s<Type>::BaseType;
+    template<AttribTypeEnum Type> struct TypeOfAttrib_s;
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Unknown> { using Type = void; using BaseType = void; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Float> { using Type = GLfloat; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Vec2> { using Type = vec2; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Vec3> { using Type = vec3; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Vec4> { using Type = vec4; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Mat2> { using Type = mat2; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Mat3> { using Type = mat3; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Mat4> { using Type = mat4; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Mat2x3> { using Type = mat2x3; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Mat2x4> { using Type = mat2x4; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Mat3x2> { using Type = mat3x2; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Mat3x4> { using Type = mat3x4; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Mat4x2> { using Type = mat4x2; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Mat4x3> { using Type = mat4x3; using BaseType = GLfloat; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Int> { using Type = GLint; using BaseType = GLint; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::IVec2> { using Type = ivec2; using BaseType = GLint; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::IVec3> { using Type = ivec3; using BaseType = GLint; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::IVec4> { using Type = ivec4; using BaseType = GLint; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::UInt> { using Type = GLuint; using BaseType = GLuint; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::UVec2> { using Type = uvec2; using BaseType = GLuint; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::UVec3> { using Type = uvec3; using BaseType = GLuint; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::UVec4> { using Type = uvec4; using BaseType = GLuint; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::Double> { using Type = GLdouble; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DVec2> { using Type = dvec2; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DVec3> { using Type = dvec3; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DVec4> { using Type = dvec4; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DMat2> { using Type = dmat2; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DMat3> { using Type = dmat3; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DMat4> { using Type = dmat4; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DMat2x3> { using Type = dmat2x3; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DMat2x4> { using Type = dmat2x4; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DMat3x2> { using Type = dmat3x2; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DMat3x4> { using Type = dmat3x4; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DMat4x2> { using Type = dmat4x2; using BaseType = GLdouble; };
+    template<> struct TypeOfAttrib_s<AttribTypeEnum::DMat4x3> { using Type = dmat4x3; using BaseType = GLdouble; };
+    template<AttribTypeEnum Type> using TypeOfAttrib = typename TypeOfAttrib_s<Type>::Type;
+    template<AttribTypeEnum Type> using BaseTypeOfAttrib = typename TypeOfAttrib_s<Type>::BaseType;
 
-    int GLGetNumRows(const AttribType Type);
-    int GLGetNumCols(const AttribType Type);
-    GLVarType GLGetVarType(const AttribType Type);
-    int GLGetNumUnits(const AttribType Type);
-    int GLGetRowLength(const AttribType Type);
-    bool GLIsInteger(const AttribType Type);
-    bool GLIsInteger(const GLVarType VarType);
-    bool GLIsDouble(const AttribType Type);
-    bool GLIsDouble(const GLVarType VarType);
-    int GLGetUnitLength(const AttribType Type);
-    int GLGetUnitLength(const GLVarType VarType);
-    const char *GLAttribTypeToString(const AttribType Type);
-    AttribType GLStringToAttribType(std::string str);
+    int GLGetNumRows(const AttribTypeEnum Type);
+    int GLGetNumCols(const AttribTypeEnum Type);
+    VarTypeEnum GLGetVarType(const AttribTypeEnum Type);
+    int GLGetNumUnits(const AttribTypeEnum Type);
+    int GLGetRowLength(const AttribTypeEnum Type);
+    bool GLIsInteger(const AttribTypeEnum Type);
+    bool GLIsInteger(const VarTypeEnum VarType);
+    bool GLIsDouble(const AttribTypeEnum Type);
+    bool GLIsDouble(const VarTypeEnum VarType);
+    int GLGetUnitLength(const AttribTypeEnum Type);
+    int GLGetUnitLength(const VarTypeEnum VarType);
+    const char *GLAttribTypeToString(const AttribTypeEnum Type);
+    AttribTypeEnum GLStringToAttribType(std::string str);
 
-    int GLGetNumRows(const UniformType Type);
-    int GLGetNumCols(const UniformType Type);
-    GLVarType GLGetVarType(const UniformType Type);
-    int GLGetNumUnits(const UniformType Type);
-    int GLGetRowLength(const UniformType Type);
-    bool GLIsInteger(const UniformType Type);
-    bool GLIsDouble(const UniformType Type);
-    int GLGetUnitLength(const UniformType Type);
-    const char *GLUniformTypeToString(const UniformType Type);
-    UniformType GLStringToUniformType(std::string str);
+    int GLGetNumRows(const UniformTypeEnum Type);
+    int GLGetNumCols(const UniformTypeEnum Type);
+    VarTypeEnum GLGetVarType(const UniformTypeEnum Type);
+    int GLGetNumUnits(const UniformTypeEnum Type);
+    int GLGetRowLength(const UniformTypeEnum Type);
+    bool GLIsInteger(const UniformTypeEnum Type);
+    bool GLIsDouble(const UniformTypeEnum Type);
+    int GLGetUnitLength(const UniformTypeEnum Type);
+    const char *GLUniformTypeToString(const UniformTypeEnum Type);
+    UniformTypeEnum GLStringToUniformType(std::string str);
+
+    TextureInternalFormatEnum GLGetBaseInternalFormat(TextureInternalFormatEnum Format);
+    TextureFormat GLGetTextureFormat(TextureInternalFormatEnum Format);
 
     class InvalidUsageException : public std::runtime_error
     {
     public:
-        InvalidUsageException(std::string What) noexcept;
+        inline InvalidUsageException(std::string What) noexcept : std::runtime_error(What) {}
     };
 };

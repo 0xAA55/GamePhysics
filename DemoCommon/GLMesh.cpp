@@ -45,7 +45,7 @@ void GLVAO::DrawByElements(MeshPrimitiveType PrimitiveType, MeshElementType Elem
 	else glDrawElementsInstanced(PT, ElementCount, ET, nullptr, InstanceCount);
 }
 
-AttribDesc::AttribDesc(std::string Name, AttribType Type, GLsizei Offset, bool AsFloat, bool Normalize) :
+AttribDesc::AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset, bool AsFloat, bool Normalize) :
 	Name(Name),
 	Type(Type),
 	VarType(GLGetVarType(Type)),

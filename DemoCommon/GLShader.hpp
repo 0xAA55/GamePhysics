@@ -18,20 +18,20 @@ namespace GLRenderer
 	{
 	public:
 		std::string Name;
-		UniformType Type;
+		UniformTypeEnum Type;
 		GLsizei Size;
 
-		ActiveUniform(const std::string &Name, UniformType Type, GLsizei Size);
+		ActiveUniform(const std::string &Name, UniformTypeEnum Type, GLsizei Size);
 	};
 
 	class ActiveAttrib
 	{
 	public:
 		std::string Name;
-		AttribType Type;
+		AttribTypeEnum Type;
 		GLsizei Size;
 
-		ActiveAttrib(const std::string &Name, AttribType Type, GLsizei Size);
+		ActiveAttrib(const std::string &Name, AttribTypeEnum Type, GLsizei Size);
 	};
 
 	class GLShaderObject

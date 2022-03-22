@@ -216,8 +216,8 @@ namespace GLRenderer
 	{
 	public:
 		std::string Name;
-		AttribType Type;
-		GLVarType VarType;
+		AttribTypeEnum Type;
+		VarTypeEnum VarType;
 		GLsizei Offset; // If `Offset` is -1, it means the offset should be calculated automatically.
 		int ColCount; // e.g. vec2, vec3, vec4
 		int RowCount; // e.g. mat4x2, mat4x3, mat4x4
@@ -225,7 +225,7 @@ namespace GLRenderer
 		bool AsFloat;
 		bool Normalize;
 
-		AttribDesc(std::string Name, AttribType Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
+		AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
 		AttribDesc(std::string Name, std::string Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
 
 		void Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint AVD) const;

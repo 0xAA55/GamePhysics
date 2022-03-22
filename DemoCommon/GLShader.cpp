@@ -59,12 +59,12 @@ GLVertexAttribLocation::GLVertexAttribLocation(const GLchar *VertexAttribName)
 	Location = glGetAttribLocation(UsingProgram, VertexAttribName);
 }
 
-ActiveUniform::ActiveUniform(const std::string &Name, UniformType Type, GLsizei Size) :
+ActiveUniform::ActiveUniform(const std::string &Name, UniformTypeEnum Type, GLsizei Size) :
 	Name(Name), Type(Type), Size(Size)
 {
 }
 
-ActiveAttrib::ActiveAttrib(const std::string &Name, AttribType Type, GLsizei Size) :
+ActiveAttrib::ActiveAttrib(const std::string &Name, AttribTypeEnum Type, GLsizei Size) :
 	Name(Name), Type(Type), Size(Size)
 {
 }
@@ -147,7 +147,7 @@ std::vector<ActiveUniform> GLShaderProgram::GetActiveUniforms() const
 		GLint Size;
 		GLenum Type;
 		glGetActiveUniform(Program, static_cast<GLuint>(i), sizeof Buf, &Length, &Size, &Type, Buf);
-		Ret.push_back(ActiveUniform(Buf, static_cast<UniformType>(Type), Size));
+		Ret.push_back(ActiveUniform(Buf, static_cast<UniformTypeEnum>(Type), Size));
 	}
 	Ret.shrink_to_fit();
 	return Ret;
@@ -167,7 +167,7 @@ std::vector<ActiveAttrib> GLShaderProgram::GetActiveAttribs() const
 		GLint Size;
 		GLenum Type;
 		glGetActiveAttrib(Program, static_cast<GLuint>(i), sizeof Buf, &Length, &Size, &Type, Buf);
-		Ret.push_back(ActiveAttrib(Buf, static_cast<AttribType>(Type), Size));
+		Ret.push_back(ActiveAttrib(Buf, static_cast<AttribTypeEnum>(Type), Size));
 	}
 	Ret.shrink_to_fit();
 	return Ret;
