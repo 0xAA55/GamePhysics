@@ -77,10 +77,10 @@ namespace GLRenderer
 	{
 	protected:
 		using IndexType = TypeOfElement<ElementType>;
-		using VertexBufferType = std::conditional_t<VertexBufferUseCachedBuffer, GLBuffer<VertexType>, GLBufferNoCache<VertexType>>;
-		using IndexBufferType = std::conditional_t<IndexBufferUseCachedBuffer, GLBuffer<IndexType>, GLBufferNoCache<IndexType>>;
-		using InstanceBufferType = std::conditional_t<InstanceBufferUseCachedBuffer, GLBuffer<InstanceType>, GLBufferNoCache<InstanceType>>;
-		using CommandBufferType = std::conditional_t<CommandBufferUseCachedBuffer, GLBuffer<DrawCommand>, GLBufferNoCache<DrawCommand>>;
+		using VertexBufferType = std::conditional_t<VertexBufferUseCachedBuffer, GLBufferVector<VertexType>, GLBufferVectorNC<VertexType>>;
+		using IndexBufferType = std::conditional_t<IndexBufferUseCachedBuffer, GLBufferVector<IndexType>, GLBufferVectorNC<IndexType>>;
+		using InstanceBufferType = std::conditional_t<InstanceBufferUseCachedBuffer, GLBufferVector<InstanceType>, GLBufferVectorNC<InstanceType>>;
+		using CommandBufferType = std::conditional_t<CommandBufferUseCachedBuffer, GLBufferVector<DrawCommand>, GLBufferVectorNC<DrawCommand>>;
 		using AttribDescArray = std::vector<AttribDesc>;
 		using VAOContainer = std::unordered_map<GLShaderProgram, GLVAO, GLShaderProgramHasher>;
 
@@ -239,18 +239,18 @@ namespace GLRenderer
 		vec2 TexCoord;
 	};
 
-	extern template GLBuffer<WaveFrontObjVertex>;
-	extern template GLBuffer<DrawCommand>;
-	extern template GLBufferNoCache<WaveFrontObjVertex>;
-	extern template GLBufferNoCache<DrawCommand>;
+	extern template GLBufferVector<WaveFrontObjVertex>;
+	extern template GLBufferVector<DrawCommand>;
+	extern template GLBufferVectorNC<WaveFrontObjVertex>;
+	extern template GLBufferVectorNC<DrawCommand>;
 
-	extern template GLBuffer<GLubyte>;
-	extern template GLBuffer<GLushort>;
-	extern template GLBuffer<GLuint>;
+	extern template GLBufferVector<GLubyte>;
+	extern template GLBufferVector<GLushort>;
+	extern template GLBufferVector<GLuint>;
 
-	extern template GLBufferNoCache<GLubyte>;
-	extern template GLBufferNoCache<GLushort>;
-	extern template GLBufferNoCache<GLuint>;
+	extern template GLBufferVectorNC<GLubyte>;
+	extern template GLBufferVectorNC<GLushort>;
+	extern template GLBufferVectorNC<GLuint>;
 
 	template <typename InstanceType, MeshElementType ElementType = MeshElementType::UnsignedInt, bool VertexBufferUseCachedBuffer = true, bool IndexBufferUseCachedBuffer = true, bool InstanceBufferUseCachedBuffer = true, bool CommandBufferUseCachedBuffer = true>
 	using GLObjMesh = GLMesh<WaveFrontObjVertex, InstanceType, ElementType, VertexBufferUseCachedBuffer, IndexBufferUseCachedBuffer, InstanceBufferUseCachedBuffer, CommandBufferUseCachedBuffer>;

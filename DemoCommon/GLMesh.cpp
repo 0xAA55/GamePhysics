@@ -1,5 +1,5 @@
 #include "GLMesh.hpp"
-#include<GL/glew.h>
+#include <GL/glew.h>
 using namespace GLRenderer;
 
 GLVAO::GLVAO() : VAO(0), Described(false)
@@ -86,15 +86,15 @@ void AttribDesc::Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint 
 	}
 }
 
-template GLBuffer<WaveFrontObjVertex>;
-template GLBuffer<DrawCommand>;
-template GLBufferNoCache<WaveFrontObjVertex>;
-template GLBufferNoCache<DrawCommand>;
+template GLBufferVector<WaveFrontObjVertex>;
+template GLBufferVector<DrawCommand>;
+template GLBufferVectorNC<WaveFrontObjVertex>;
+template GLBufferVectorNC<DrawCommand>;
 
-template GLBuffer<GLubyte>;
-template GLBuffer<GLushort>;
-template GLBuffer<GLuint>;
+template GLBufferVector<GLubyte>;
+template GLBufferVector<GLushort>;
+template GLBufferVector<GLuint>;
 
-template GLBufferNoCache<GLubyte>;
-template GLBufferNoCache<GLushort>;
-template GLBufferNoCache<GLuint>;
+template GLBufferVectorNC<GLubyte>;
+template GLBufferVectorNC<GLushort>;
+template GLBufferVectorNC<GLuint>;
