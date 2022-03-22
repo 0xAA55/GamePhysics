@@ -173,6 +173,7 @@
     <ClInclude Include="GLShader.hpp" />
     <ClInclude Include="GLMesh.hpp" />
     <ClInclude Include="GLRenderer.hpp" />
+    <ClInclude Include="GLTexture.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppFrame.cpp" />
@@ -181,6 +182,7 @@
     <ClCompile Include="GLShader.cpp" />
     <ClCompile Include="GLMesh.cpp" />
     <ClCompile Include="GLRenderer.cpp" />
+    <ClCompile Include="GLTexture.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
