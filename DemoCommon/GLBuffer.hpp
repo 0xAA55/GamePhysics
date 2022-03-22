@@ -236,6 +236,20 @@ namespace GLRenderer
 		{
 		}
 
+		GLBuffer(BufferType Type, BufferUsage Usage, const std::vector<T>& Data) :
+			Type(Type),
+			Usage(Usage),
+			BufferObject(nullptr),
+			Contents(Data),
+			Updated(),
+			Updated_MinIndex(0),
+			Updated_MaxIndex(Data.size() - 1),
+			Flushed(false)
+		{
+			Updated.clear();
+			Updated.resize(Size(), true);
+		}
+
 		GLBuffer &operator =(const GLBuffer &CopyFrom)
 		{
 			Type = CopyFrom.Type;
@@ -587,6 +601,16 @@ namespace GLRenderer
 			ItemCapacity(InitCapacity),
 			BufferObject(new GLBufferObject(Type, InitCapacity * sizeof(T), Usage))
 		{
+		}
+		GLBufferNoCache(BufferType Type, BufferUsage Usage, const std::vector<T>& Data) :
+			Type(Type),
+			Usage(Usage),
+			ItemCount(Data.size()),
+			ItemCapacity(Data.capacity()),
+			BufferObject(new GLBufferObject(Type, Data.capacity() * sizeof(T), Usage))
+		{
+			BufferObject->Bind();
+			BufferObject->SetData(0, ItemCount * sizeof(T), Data.data());
 		}
 		GLBufferNoCache(const GLBufferNoCache &From) :
 			Type(From.Type),
