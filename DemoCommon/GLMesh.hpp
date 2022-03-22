@@ -239,6 +239,19 @@ namespace GLRenderer
 		vec2 TexCoord;
 	};
 
+	extern template GLBuffer<WaveFrontObjVertex>;
+	extern template GLBuffer<DrawCommand>;
+	extern template GLBufferNoCache<WaveFrontObjVertex>;
+	extern template GLBufferNoCache<DrawCommand>;
+
+	extern template GLBuffer<GLubyte>;
+	extern template GLBuffer<GLushort>;
+	extern template GLBuffer<GLuint>;
+
+	extern template GLBufferNoCache<GLubyte>;
+	extern template GLBufferNoCache<GLushort>;
+	extern template GLBufferNoCache<GLuint>;
+
 	template <typename InstanceType, MeshElementType ElementType = MeshElementType::UnsignedInt, bool VertexBufferUseCachedBuffer = true, bool IndexBufferUseCachedBuffer = true, bool InstanceBufferUseCachedBuffer = true, bool CommandBufferUseCachedBuffer = true>
 	using GLObjMesh = GLMesh<WaveFrontObjVertex, InstanceType, ElementType, VertexBufferUseCachedBuffer, IndexBufferUseCachedBuffer, InstanceBufferUseCachedBuffer, CommandBufferUseCachedBuffer>;
 }

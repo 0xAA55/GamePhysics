@@ -86,5 +86,15 @@ void AttribDesc::Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint 
 	}
 }
 
+template GLBuffer<WaveFrontObjVertex>;
+template GLBuffer<DrawCommand>;
+template GLBufferNoCache<WaveFrontObjVertex>;
+template GLBufferNoCache<DrawCommand>;
 
+template GLBuffer<GLubyte>;
+template GLBuffer<GLushort>;
+template GLBuffer<GLuint>;
 
+template GLBufferNoCache<GLubyte>;
+template GLBufferNoCache<GLushort>;
+template GLBufferNoCache<GLuint>;
