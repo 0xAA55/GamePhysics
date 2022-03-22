@@ -12,24 +12,9 @@ GLVAO::~GLVAO()
 	glDeleteVertexArrays(1, &VAO);
 }
 
-GLVAO::operator GLuint() const
-{
-	return VAO;
-}
-
 void GLVAO::Bind() const
 {
 	glBindVertexArray(VAO);
-}
-
-bool GLVAO::IsDescribed() const
-{
-	return Described;
-}
-
-void GLVAO::SetDescribed()
-{
-	Described = true;
 }
 
 void GLVAO::Draw(MeshPrimitiveType PrimitiveType, GLsizei CommandCount) const
@@ -71,10 +56,7 @@ AttribDesc::AttribDesc(std::string Name, AttribType Type, GLsizei Offset, bool A
 	Normalize(Normalize)
 {
 	Length = GLGetUnitLength(Type) * ColCount * RowCount;
-	if (!AsFloat)
-	{
-		AsFloat = (!GLIsInteger(Type) && !GLIsDouble(Type));
-	}
+	if (!AsFloat) { AsFloat = (!GLIsInteger(Type) && !GLIsDouble(Type)); }
 }
 
 AttribDesc::AttribDesc(std::string Name, std::string Type, GLsizei Offset, bool AsFloat, bool Normalize) :
@@ -88,6 +70,7 @@ void AttribDesc::Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint 
 	if (Location < 0) return;
 	GLsizei CurOffset = Offset;
 	GLsizei RowSize = GLGetUnitLength(VarType) * ColCount;
+	if (Offset == -1) throw std::invalid_argument("From AttribDesc::Describe(): `Offset` is -1, which means that the offset should be automatically calculated.");
 	for (GLint i = 0; i < RowCount; i++)
 	{
 		const void *PtrParam = reinterpret_cast<const void *>(static_cast<size_t>(CurOffset));
