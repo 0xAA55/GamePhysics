@@ -20,11 +20,6 @@ GLShaderObject::~GLShaderObject()
 	glDeleteShader(Obj);
 }
 
-GLShaderObject::operator GLuint() const
-{
-	return Obj;
-}
-
 void GLShaderObject::Compile(const char *ShaderSource)
 {
 	GLint Status = GL_FALSE;
@@ -45,18 +40,8 @@ void GLShaderObject::Compile(const char *ShaderSource)
 	if (!Status) throw ShaderCompilationException(InfoLog);
 }
 
-std::string GLShaderObject::GetInfoLog() const
-{
-	return InfoLog;
-}
-
 GLuint GLUniformLocation::UsingProgram = 0;
 GLuint GLVertexAttribLocation::UsingProgram = 0;
-
-constexpr GLUniformLocation::GLUniformLocation(GLint Location) :
-	Location(Location)
-{
-}
 
 GLUniformLocation::GLUniformLocation(const GLchar *UniformName)
 {
@@ -64,21 +49,6 @@ GLUniformLocation::GLUniformLocation(const GLchar *UniformName)
 	if (!UsingProgram) throw std::logic_error("Must call GLShaderProgram::Use() first.");
 #endif
 	Location = glGetUniformLocation(UsingProgram, UniformName);
-}
-
-GLUniformLocation::GLUniformLocation(std::string UniformName)
-{
-	Location = glGetUniformLocation(UsingProgram, UniformName.c_str());
-}
-
-constexpr GLUniformLocation::operator GLint() const
-{
-	return Location;
-}
-
-constexpr GLVertexAttribLocation::GLVertexAttribLocation(GLint Location) :
-	Location(Location)
-{
 }
 
 GLVertexAttribLocation::GLVertexAttribLocation(const GLchar *VertexAttribName)
@@ -89,14 +59,14 @@ GLVertexAttribLocation::GLVertexAttribLocation(const GLchar *VertexAttribName)
 	Location = glGetAttribLocation(UsingProgram, VertexAttribName);
 }
 
-GLVertexAttribLocation::GLVertexAttribLocation(std::string VertexAttribName)
+ActiveUniform::ActiveUniform(const std::string &Name, UniformType Type, GLsizei Size) :
+	Name(Name), Type(Type), Size(Size)
 {
-	Location = glGetAttribLocation(UsingProgram, VertexAttribName.c_str());
 }
 
-constexpr GLVertexAttribLocation::operator GLint() const
+ActiveAttrib::ActiveAttrib(const std::string &Name, AttribType Type, GLsizei Size) :
+	Name(Name), Type(Type), Size(Size)
 {
-	return Location;
 }
 
 GLShaderProgram::GLShaderProgram(const GLchar *VertexShaderCode, const GLchar *GeometryShaderCode, const GLchar *FragmentShaderCode) :
@@ -149,38 +119,6 @@ GLShaderProgram::~GLShaderProgram()
 	glDeleteProgram(Program);
 }
 
-std::string GLShaderProgram::GetInfoLogVS() const
-{
-	return InfoLogVS;
-}
-std::string GLShaderProgram::GetInfoLogGS() const
-{
-	return InfoLogGS;
-}
-std::string GLShaderProgram::GetInfoLogFS() const
-{
-	return InfoLogFS;
-}
-std::string GLShaderProgram::GetInfoLogLinkage() const
-{
-	return InfoLogLinkage;
-}
-
-size_t GLShaderProgram::GetHash() const
-{
-	return Hash;
-}
-
-bool GLShaderProgram::operator==(const GLShaderProgram &Another) const
-{
-	return Hash == Another.Hash && Program == Another.Program;
-}
-
-GLShaderProgram::operator GLuint() const
-{
-	return Program;
-}
-
 void GLShaderProgram::Use() const
 {
 	glUseProgram(Program);
@@ -193,6 +131,46 @@ void GLShaderProgram::Unuse() const
 	glUseProgram(0);
 	GLUniformLocation::UsingProgram = 0;
 	GLVertexAttribLocation::UsingProgram = 0;
+}
+
+std::vector<ActiveUniform> GLShaderProgram::GetActiveUniforms() const
+{
+	GLint Count, i;
+	std::vector<ActiveUniform> Ret;
+
+	glGetProgramiv(Program, GL_ACTIVE_UNIFORMS, &Count);
+	Ret.reserve(static_cast<size_t>(Count));
+	for (i = 0; i < Count; i++)
+	{
+		char Buf[512];
+		GLsizei Length;
+		GLint Size;
+		GLenum Type;
+		glGetActiveUniform(Program, static_cast<GLuint>(i), sizeof Buf, &Length, &Size, &Type, Buf);
+		Ret.push_back(ActiveUniform(Buf, static_cast<UniformType>(Type), Size));
+	}
+	Ret.shrink_to_fit();
+	return Ret;
+}
+
+std::vector<ActiveAttrib> GLShaderProgram::GetActiveAttribs() const
+{
+	GLint Count, i;
+	std::vector<ActiveAttrib> Ret;
+
+	glGetProgramiv(Program, GL_ACTIVE_ATTRIBUTES, &Count);
+	Ret.reserve(static_cast<size_t>(Count));
+	for (i = 0; i < Count; i++)
+	{
+		char Buf[512];
+		GLsizei Length;
+		GLint Size;
+		GLenum Type;
+		glGetActiveAttrib(Program, static_cast<GLuint>(i), sizeof Buf, &Length, &Size, &Type, Buf);
+		Ret.push_back(ActiveAttrib(Buf, static_cast<AttribType>(Type), Size));
+	}
+	Ret.shrink_to_fit();
+	return Ret;
 }
 
 void GLShaderProgram::SetUniform(GLUniformLocation location, GLfloat x) { glUniform1f(location, x); }

@@ -1,4 +1,5 @@
 #pragma once
+#include<vector>
 #include<string>
 #include<stdexcept>
 #include<functional>
@@ -13,6 +14,26 @@ namespace GLRenderer
 		ShaderCompilationException(std::string InfoLog) noexcept;
 	};
 
+	class ActiveUniform
+	{
+	public:
+		std::string Name;
+		UniformType Type;
+		GLsizei Size;
+
+		ActiveUniform(const std::string &Name, UniformType Type, GLsizei Size);
+	};
+
+	class ActiveAttrib
+	{
+	public:
+		std::string Name;
+		AttribType Type;
+		GLsizei Size;
+
+		ActiveAttrib(const std::string &Name, AttribType Type, GLsizei Size);
+	};
+
 	class GLShaderObject
 	{
 	protected:
@@ -24,9 +45,10 @@ namespace GLRenderer
 		GLShaderObject(GLenum ShaderType);
 		~GLShaderObject();
 
-		operator GLuint() const;
+		inline operator GLuint() const { return Obj; }
+		inline std::string GetInfoLog() const { return InfoLog; }
+
 		void Compile(const char *ShaderSource) noexcept(false);
-		std::string GetInfoLog() const;
 	};
 
 	class GLUniformLocation
@@ -37,10 +59,11 @@ namespace GLRenderer
 		friend class GLShaderProgram;
 
 	public:
-		constexpr GLUniformLocation(GLint Location);
 		GLUniformLocation(const GLchar *UniformName);
-		GLUniformLocation(std::string UniformName);
-		constexpr operator GLint() const;
+
+		inline GLUniformLocation(std::string UniformName) : GLUniformLocation(UniformName.c_str()) {}
+		inline GLUniformLocation(GLint Location) : Location(Location) {}
+		inline operator GLint() const { return Location; }
 	};
 
 	class GLVertexAttribLocation
@@ -51,16 +74,11 @@ namespace GLRenderer
 		friend class GLShaderProgram;
 
 	public:
-		constexpr GLVertexAttribLocation(GLint Location);
 		GLVertexAttribLocation(const GLchar *VertexAttribName);
-		GLVertexAttribLocation(std::string VertexAttribName);
-		constexpr operator GLint() const;
-	};
 
-	struct ActiveUniform
-	{
-		std::string Name;
-		GLsizei Size;
+		inline GLVertexAttribLocation(std::string VertexAttribName) : GLVertexAttribLocation(VertexAttribName.c_str()){}
+		inline GLVertexAttribLocation(GLint Location) : Location(Location) {}
+		inline operator GLint() const { return Location; }
 	};
 
 	class GLShaderProgram
@@ -77,17 +95,20 @@ namespace GLRenderer
 		GLShaderProgram(const GLchar *VertexShaderCode, const GLchar *GeometryShaderCode, const GLchar *FragmentShaderCode) noexcept(false);
 		~GLShaderProgram();
 
-		std::string GetInfoLogVS() const;
-		std::string GetInfoLogGS() const;
-		std::string GetInfoLogFS() const;
-		std::string GetInfoLogLinkage() const;
+		inline std::string GetInfoLogVS() const { return InfoLogVS; }
+		inline std::string GetInfoLogGS() const { return InfoLogGS; }
+		inline std::string GetInfoLogFS() const { return InfoLogFS; }
+		inline std::string GetInfoLogLinkage() const { return InfoLogLinkage; }
 
-		size_t GetHash() const;
-		bool operator==(const GLShaderProgram &Another) const;
+		inline size_t GetHash() const { return Hash; }
+		inline bool operator==(const GLShaderProgram &Another) const { return Hash == Another.Hash && Program == Another.Program; }
+		inline operator GLuint() const { return Program; }
 
-		operator GLuint() const;
 		void Use() const;
 		void Unuse() const;
+
+		std::vector<ActiveUniform> GetActiveUniforms() const;
+		std::vector<ActiveAttrib> GetActiveAttribs() const;
 
 		static void SetUniform(GLUniformLocation location, GLfloat x);
 		static void SetUniform(GLUniformLocation location, GLfloat x, GLfloat y);
@@ -119,6 +140,25 @@ namespace GLRenderer
 		static void SetUniform(GLUniformLocation location, GLuint64 x, GLuint64 y, GLuint64 z);
 		static void SetUniform(GLUniformLocation location, GLuint64 x, GLuint64 y, GLuint64 z, GLuint64 w);
 		static void SetUniform(GLUniformLocation location, int dimension, const GLuint64 *value, int count);
+
+		static void SetUniform(GLUniformLocation location, const mat2 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const mat3 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const mat4 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const mat2x3 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const mat2x4 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const mat3x2 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const mat3x4 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const mat4x2 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const mat4x3 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const dmat2 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const dmat3 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const dmat4 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const dmat2x3 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const dmat2x4 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const dmat3x2 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const dmat3x4 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const dmat4x2 v[], int count, bool transpose = false);
+		static void SetUniform(GLUniformLocation location, const dmat4x3 v[], int count, bool transpose = false);
 
 		static inline void SetUniform(GLUniformLocation location, const vec1 &v) { SetUniform(location, v.x); }
 		static inline void SetUniform(GLUniformLocation location, const vec2 &v) { SetUniform(location, v.x, v.y); }
@@ -169,25 +209,6 @@ namespace GLRenderer
 		static inline void SetUniform(GLUniformLocation location, const u64vec2 v[], int count) { SetUniform(location, 2, &v[0].x, count); }
 		static inline void SetUniform(GLUniformLocation location, const u64vec3 v[], int count) { SetUniform(location, 3, &v[0].x, count); }
 		static inline void SetUniform(GLUniformLocation location, const u64vec4 v[], int count) { SetUniform(location, 4, &v[0].x, count); }
-
-		static void SetUniform(GLUniformLocation location, const mat2 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const mat3 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const mat4 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const mat2x3 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const mat2x4 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const mat3x2 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const mat3x4 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const mat4x2 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const mat4x3 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const dmat2 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const dmat3 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const dmat4 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const dmat2x3 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const dmat2x4 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const dmat3x2 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const dmat3x4 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const dmat4x2 v[], int count, bool transpose = false);
-		static void SetUniform(GLUniformLocation location, const dmat4x3 v[], int count, bool transpose = false);
 
 		static inline void SetUniform(GLUniformLocation location, const mat2 &v, bool transpose = false) { SetUniform(location, &v, 1, transpose); }
 		static inline void SetUniform(GLUniformLocation location, const mat3 &v, bool transpose = false) { SetUniform(location, &v, 1, transpose); }
@@ -251,7 +272,7 @@ namespace GLRenderer
 
 	struct GLShaderProgramHasher
 	{
-		std::size_t operator()(const GLShaderProgram &K) const
+		inline std::size_t operator()(const GLShaderProgram &K) const
 		{
 			return K.GetHash();
 		}
