@@ -122,30 +122,11 @@ namespace GLRenderer
 			return *this;
 		}
 
-		inline operator GLBufferObject() const noexcept
-		{
-			return *BufferObject;
-		}
-
-		inline GLBufferObject &operator *() const noexcept
-		{
-			return *BufferObject;
-		}
-
-		inline GLBufferObject *operator ->() const noexcept
-		{
-			return BufferObject.get();
-		}
-
-		inline GLBufferObject *Get() const noexcept
-		{
-			return BufferObject.get();
-		}
-
-		inline operator bool() const noexcept
-		{
-			return BufferObject.operator bool();
-		}
+		inline operator GLBufferObject() const noexcept { return *BufferObject; }
+		inline GLBufferObject &operator *() const noexcept { return *BufferObject; }
+		inline GLBufferObject *operator ->() const noexcept { return BufferObject.get(); }
+		inline GLBufferObject *Get() const noexcept { return BufferObject.get(); }
+		inline operator bool() const noexcept { return BufferObject.operator bool(); }
 
 		inline void Discard() noexcept
 		{

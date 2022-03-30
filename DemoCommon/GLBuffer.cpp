@@ -1,6 +1,7 @@
 #include"GLBuffer.hpp"
 #include<GL/glew.h>
 #include<cstdlib>
+#include<cassert>
 using namespace GLRenderer;
 
 GLBufferObject::GLBufferObject(BufferType Type, size_t Length, BufferUsage Usage) :
