@@ -48,19 +48,19 @@ void GLVAO::DrawByElements(MeshPrimitiveType PrimitiveType, MeshElementType Elem
 AttribDesc::AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset, bool AsFloat, bool Normalize) :
 	Name(Name),
 	Type(Type),
-	VarType(GLGetVarType(Type)),
+	VarType(GetVarType(Type)),
 	Offset(Offset),
-	ColCount(GLGetNumCols(Type)),
-	RowCount(GLGetNumRows(Type)),
+	ColCount(GetNumCols(Type)),
+	RowCount(GetNumRows(Type)),
 	AsFloat(AsFloat),
 	Normalize(Normalize)
 {
-	Length = GLGetUnitLength(Type) * ColCount * RowCount;
-	if (!AsFloat) { AsFloat = (!GLIsInteger(Type) && !GLIsDouble(Type)); }
+	Length = GetUnitLength(Type) * ColCount * RowCount;
+	if (!AsFloat) { AsFloat = (!IsInteger(Type) && !IsDouble(Type)); }
 }
 
 AttribDesc::AttribDesc(std::string Name, std::string Type, GLsizei Offset, bool AsFloat, bool Normalize) :
-	AttribDesc(Name, GLStringToAttribType(Type), Offset, AsFloat, Normalize)
+	AttribDesc(Name, StringToAttribType(Type), Offset, AsFloat, Normalize)
 {
 }
 
@@ -69,7 +69,7 @@ void AttribDesc::Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint 
 	GLint Location = GLVertexAttribLocation(Name);
 	if (Location < 0) return;
 	GLsizei CurOffset = Offset;
-	GLsizei RowSize = GLGetUnitLength(VarType) * ColCount;
+	GLsizei RowSize = GetUnitLength(VarType) * ColCount;
 	if (Offset == -1) throw std::invalid_argument("From AttribDesc::Describe(): `Offset` is -1, which means that the offset should be automatically calculated.");
 	for (GLint i = 0; i < RowCount; i++)
 	{
@@ -77,8 +77,8 @@ void AttribDesc::Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint 
 		GLenum GLType = static_cast<GLenum>(VarType);
 		glEnableVertexAttribArray(Location);
 		if (AsFloat) glVertexAttribPointer(Location, ColCount, GLType, Normalize, Stride, PtrParam);
-		else if (GLIsInteger(Type)) glVertexAttribIPointer(Location, ColCount, GLType, Stride, PtrParam);
-		else if (GLIsDouble(Type)) glVertexAttribLPointer(Location, ColCount, GLType, Stride, PtrParam);
+		else if (IsInteger(Type)) glVertexAttribIPointer(Location, ColCount, GLType, Stride, PtrParam);
+		else if (IsDouble(Type)) glVertexAttribLPointer(Location, ColCount, GLType, Stride, PtrParam);
 		else throw std::invalid_argument("AttribDesc::Describe(): Don't know how to describe vertex structure.");
 		glVertexAttribDivisor(Location, AVD);
 		Location++;

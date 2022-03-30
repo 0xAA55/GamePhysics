@@ -229,7 +229,7 @@ namespace GLRenderer
 		AttribDesc(std::string Name, std::string Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
 
 		void Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint AVD) const;
-		inline GLsizei GetSizeBytes() const { return GLGetNumUnits(Type) * GLGetUnitLength(Type); }
+		inline GLsizei GetSizeBytes() const { return GetNumUnits(Type) * GetUnitLength(Type); }
 	};
 
 	class WaveFrontObjVertex
@@ -252,6 +252,18 @@ namespace GLRenderer
 	extern template GLBufferVectorNC<GLushort>;
 	extern template GLBufferVectorNC<GLuint>;
 
-	template <typename InstanceType, MeshElementType ElementType = MeshElementType::UnsignedInt, bool VertexBufferUseCachedBuffer = true, bool IndexBufferUseCachedBuffer = true, bool InstanceBufferUseCachedBuffer = true, bool CommandBufferUseCachedBuffer = true>
-	using GLObjMesh = GLMesh<WaveFrontObjVertex, InstanceType, ElementType, VertexBufferUseCachedBuffer, IndexBufferUseCachedBuffer, InstanceBufferUseCachedBuffer, CommandBufferUseCachedBuffer>;
+	template<
+		typename InstanceType,
+		MeshElementType ElementType = MeshElementType::UnsignedInt,
+		bool VertexBufferUseCachedBuffer = true,
+		bool IndexBufferUseCachedBuffer = true,
+		bool InstanceBufferUseCachedBuffer = true,
+		bool CommandBufferUseCachedBuffer = true>
+	using GLObjMesh = GLMesh<WaveFrontObjVertex,
+		InstanceType,
+		ElementType,
+		VertexBufferUseCachedBuffer,
+		IndexBufferUseCachedBuffer,
+		InstanceBufferUseCachedBuffer,
+		CommandBufferUseCachedBuffer>;
 }
