@@ -56,6 +56,7 @@ namespace GLRenderer
 		~GLBufferObject();
 
 		inline operator GLuint() const { return Object; }
+		inline GLuint GetObject() const { return Object; }
 		inline size_t GetLength() const { return Length; }
 
 		void *MapRO() const;
