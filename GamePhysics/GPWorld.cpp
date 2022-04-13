@@ -44,12 +44,12 @@ void GPWorld::Tick(double Duration)
 		double CurTime = CumulativeTime;
 		if (CurTime + TickSkipThreshold <= TargetTime)
 		{
-			r->Integrate(Duration);
+			r->Integrate((float)Duration);
 			CurTime += Duration;
 		}
 		else if (CurTime + SimulationDeltaTime <= TargetTime)
 		{
-			r->Integrate(SimulationDeltaTime);
+			r->Integrate((float)SimulationDeltaTime);
 			CurTime += SimulationDeltaTime;
 		}
 	}
