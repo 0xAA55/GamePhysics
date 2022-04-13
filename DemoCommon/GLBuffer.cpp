@@ -95,6 +95,8 @@ bool GLBufferObject::IsBind() const
 
 #if _DEBUG
 #define CHECKBINDING 1
+#else
+#define CHECKBINDING 0
 #endif
 
 #if CHECKBINDING
