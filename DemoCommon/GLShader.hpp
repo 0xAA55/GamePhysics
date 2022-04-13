@@ -95,32 +95,45 @@ namespace GLRenderer
 		size_t Hash;
 		
 	public:
+		// Create a shader for rendering.
 		GLShaderProgram(const GLchar *VertexShaderCode, const GLchar *GeometryShaderCode, const GLchar *FragmentShaderCode) noexcept(false);
+
+		// Create a shader for computing.
 		GLShaderProgram(const GLchar *ComputeShaderCode) noexcept(false);
 		GLShaderProgram(const GLchar *ComputeShaderCode, const uvec3 &NumWorkGroups) noexcept(false);
+
 		~GLShaderProgram();
 
+		// Functions for debugging the shader.
 		inline std::string GetInfoLogVS() const { return InfoLogVS; }
 		inline std::string GetInfoLogGS() const { return InfoLogGS; }
 		inline std::string GetInfoLogFS() const { return InfoLogFS; }
 		inline std::string GetInfoLogLinkage() const { return InfoLogLinkage; }
 
+		// Functions for getting the inputs of the shader.
+		std::vector<ActiveUniform> GetActiveUniforms() const;
+		std::vector<ActiveAttrib> GetActiveAttribs() const;
+
+		// Functions for checking if is the same shader.
 		inline size_t GetHash() const { return Hash; }
 		inline bool operator==(const GLShaderProgram &Another) const { return Hash == Another.Hash && Program == Another.Program; }
 		inline operator GLuint() const { return Program; }
 
+		// Functions to use the shader.
 		void Use() const;
 		void Unuse() const;
 
+		// Set the number of workgroups.
 		void SetComputeNumWorkGroups(const uvec3 &NumWorkGroups);
 		uvec3 GetComputeNumWorkGroups() const;
 
-		void RunComputeShader() const;
-		void RunComputeShader(const uvec3&NumWorkGroups) const;
+		void RunComputeShader() const; // Use the preset number of workgroups.
+		void RunComputeShader(const uvec3&NumWorkGroups) const; // Use the given number of workgroups.
 
-		std::vector<ActiveUniform> GetActiveUniforms() const;
-		std::vector<ActiveAttrib> GetActiveAttribs() const;
+		// Wait for image objects used by the compute shader to be fully written.
+		void WaitForCompute() const;
 
+		// Functions to set shader's `uniform` inputs.
 		static void SetUniform(GLUniformLocation location, GLfloat x);
 		static void SetUniform(GLUniformLocation location, GLfloat x, GLfloat y);
 		static void SetUniform(GLUniformLocation location, GLfloat x, GLfloat y, GLfloat z);
@@ -240,6 +253,7 @@ namespace GLRenderer
 		static inline void SetUniform(GLUniformLocation location, const dmat4x2 &v, bool transpose = false) { SetUniform(location, &v, 1, transpose); }
 		static inline void SetUniform(GLUniformLocation location, const dmat4x3 &v, bool transpose = false) { SetUniform(location, &v, 1, transpose); }
 
+		// Functions to set shader's `in` inputs.
 		static void SetVertexAttribFloat(GLVertexAttribLocation location, GLfloat x);
 		static void SetVertexAttribFloat(GLVertexAttribLocation location, GLfloat x, GLfloat y);
 		static void SetVertexAttribFloat(GLVertexAttribLocation location, GLfloat x, GLfloat y, GLfloat z);
