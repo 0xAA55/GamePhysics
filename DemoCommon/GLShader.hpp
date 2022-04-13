@@ -5,6 +5,7 @@
 #include<functional>
 #include<type_traits>
 #include<unordered_map>
+#include<GLBuffer.hpp>
 #include<GLRendererBase.hpp>
 namespace GLRenderer
 {
@@ -85,14 +86,18 @@ namespace GLRenderer
 	{
 	protected:
 		GLuint Program;
-		std::string InfoLogVS;
-		std::string InfoLogGS;
-		std::string InfoLogFS;
+		std::string InfoLogVS; // Vertex Shader
+		std::string InfoLogGS; // Geometry Shader
+		std::string InfoLogFS; // Fragment Shader
+		std::string InfoLogCS; // Compute Shader
 		std::string InfoLogLinkage;
+		std::shared_ptr<GLBufferObject> ComputeNumWorkGroups;
 		size_t Hash;
 		
 	public:
 		GLShaderProgram(const GLchar *VertexShaderCode, const GLchar *GeometryShaderCode, const GLchar *FragmentShaderCode) noexcept(false);
+		GLShaderProgram(const GLchar *ComputeShaderCode) noexcept(false);
+		GLShaderProgram(const GLchar *ComputeShaderCode, const uvec3 &NumWorkGroups) noexcept(false);
 		~GLShaderProgram();
 
 		inline std::string GetInfoLogVS() const { return InfoLogVS; }
@@ -106,6 +111,12 @@ namespace GLRenderer
 
 		void Use() const;
 		void Unuse() const;
+
+		void SetComputeNumWorkGroups(const uvec3 &NumWorkGroups);
+		uvec3 GetComputeNumWorkGroups() const;
+
+		void RunComputeShader() const;
+		void RunComputeShader(const uvec3&NumWorkGroups) const;
 
 		std::vector<ActiveUniform> GetActiveUniforms() const;
 		std::vector<ActiveAttrib> GetActiveAttribs() const;

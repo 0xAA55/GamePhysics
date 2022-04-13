@@ -70,7 +70,7 @@ ActiveAttrib::ActiveAttrib(const std::string &Name, AttribTypeEnum Type, GLsizei
 }
 
 GLShaderProgram::GLShaderProgram(const GLchar *VertexShaderCode, const GLchar *GeometryShaderCode, const GLchar *FragmentShaderCode) :
-	Program(glCreateProgram()), Hash(0)
+	Program(glCreateProgram()), ComputeNumWorkGroups(nullptr), Hash(0)
 {
 	if (VertexShaderCode)
 	{
@@ -114,6 +114,37 @@ GLShaderProgram::GLShaderProgram(const GLchar *VertexShaderCode, const GLchar *G
 	if (!Status) throw ShaderCompilationException(InfoLogLinkage);
 }
 
+GLShaderProgram::GLShaderProgram(const GLchar *ComputeShaderCode) :
+	Program(glCreateProgram()), ComputeNumWorkGroups(new GLBufferObject(BufferType::DispatchIndirectBuffer, sizeof(uvec3), BufferUsage::StreamDraw)), Hash(0)
+{
+	GLShaderObject s(GL_COMPUTE_SHADER);
+	s.Compile(ComputeShaderCode);
+	InfoLogFS = s.GetInfoLog();
+	glAttachShader(Program, s);
+	GLHashCombine(Hash, std::string(ComputeShaderCode));
+	GLHashCombine(Hash, InfoLogCS);
+	glLinkProgram(Program);
+
+	GLint Status = GL_FALSE;
+	GLsizei InfoLogLength = 0;
+	glGetProgramiv(Program, GL_INFO_LOG_LENGTH, &InfoLogLength);
+	if (InfoLogLength)
+	{
+		InfoLogLinkage.resize(InfoLogLength, '\0');
+		glGetShaderInfoLog(Program, InfoLogLength, &InfoLogLength, &InfoLogLinkage[0]);
+		GLHashCombine(Hash, InfoLogLength);
+	}
+	glGetProgramiv(Program, GL_LINK_STATUS, &Status);
+	if (!Status) throw ShaderCompilationException(InfoLogLinkage);
+}
+
+
+GLShaderProgram::GLShaderProgram(const GLchar *ComputeShaderCode, const uvec3 &NumWorkGroups) :
+	GLShaderProgram(ComputeShaderCode)
+{
+	SetComputeNumWorkGroups(NumWorkGroups);
+}
+
 GLShaderProgram::~GLShaderProgram()
 {
 	glDeleteProgram(Program);
@@ -131,6 +162,37 @@ void GLShaderProgram::Unuse() const
 	glUseProgram(0);
 	GLUniformLocation::UsingProgram = 0;
 	GLVertexAttribLocation::UsingProgram = 0;
+}
+
+
+void GLShaderProgram::SetComputeNumWorkGroups(const uvec3 &NumWorkGroups)
+{
+	ComputeNumWorkGroups->Bind();
+	ComputeNumWorkGroups->SetData(&NumWorkGroups);
+	ComputeNumWorkGroups->Unbind();
+}
+
+uvec3 GLShaderProgram::GetComputeNumWorkGroups() const
+{
+	uvec3 ret;
+	ComputeNumWorkGroups->Bind();
+	ComputeNumWorkGroups->GetData(&ret);
+	ComputeNumWorkGroups->Unbind();
+	return ret;
+}
+
+void GLShaderProgram::RunComputeShader() const
+{
+	Use();
+	ComputeNumWorkGroups->Bind();
+	glDispatchComputeIndirect(ComputeNumWorkGroups->GetObject());
+	ComputeNumWorkGroups->Unbind();
+}
+
+void GLShaderProgram::RunComputeShader(const uvec3 &NumWorkGroups) const
+{
+	Use();
+	glDispatchCompute(NumWorkGroups.x, NumWorkGroups.y, NumWorkGroups.z);
 }
 
 std::vector<ActiveUniform> GLShaderProgram::GetActiveUniforms() const
