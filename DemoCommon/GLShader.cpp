@@ -164,9 +164,25 @@ void GLShaderProgram::Unuse() const
 	GLVertexAttribLocation::UsingProgram = 0;
 }
 
+#if _DEBUG
+#define CHECKSHADERTYPE 1
+#define CHECKDIMENSIONS 1
+#else
+#define CHECKSHADERTYPE 0
+#define CHECKDIMENSIONS 0
+#endif
+
+#if CHECKSHADERTYPE
+#define CheckIsCompute() assert(ComputeNumWorkGroups.get() != nullptr)
+#define CheckIsNotCompute() assert(ComputeNumWorkGroups.get() == nullptr)
+#else
+#define CheckIsCompute()
+#define CheckIsNotCompute()
+#endif
 
 void GLShaderProgram::SetComputeNumWorkGroups(const uvec3 &NumWorkGroups)
 {
+	CheckIsCompute();
 	ComputeNumWorkGroups->Bind();
 	ComputeNumWorkGroups->SetData(&NumWorkGroups);
 	ComputeNumWorkGroups->Unbind();
@@ -174,6 +190,7 @@ void GLShaderProgram::SetComputeNumWorkGroups(const uvec3 &NumWorkGroups)
 
 uvec3 GLShaderProgram::GetComputeNumWorkGroups() const
 {
+	CheckIsCompute();
 	uvec3 ret;
 	ComputeNumWorkGroups->Bind();
 	ComputeNumWorkGroups->GetData(&ret);
@@ -183,6 +200,7 @@ uvec3 GLShaderProgram::GetComputeNumWorkGroups() const
 
 void GLShaderProgram::RunComputeShader() const
 {
+	CheckIsCompute();
 	Use();
 	ComputeNumWorkGroups->Bind();
 	glDispatchComputeIndirect(ComputeNumWorkGroups->GetObject());
@@ -191,8 +209,15 @@ void GLShaderProgram::RunComputeShader() const
 
 void GLShaderProgram::RunComputeShader(const uvec3 &NumWorkGroups) const
 {
+	CheckIsCompute();
 	Use();
 	glDispatchCompute(NumWorkGroups.x, NumWorkGroups.y, NumWorkGroups.z);
+}
+
+void GLShaderProgram::WaitForCompute() const
+{
+	CheckIsCompute();
+	glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 }
 
 std::vector<ActiveUniform> GLShaderProgram::GetActiveUniforms() const
@@ -267,7 +292,9 @@ void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, cons
 	case 2: glUniform2fv(location, count, value); break;
 	case 3: glUniform3fv(location, count, value); break;
 	case 4: glUniform4fv(location, count, value); break;
+#if CHECKDIMENSIONS
 	default: throw std::invalid_argument("`dimension` must be 1 or 2 or 3 or 4.");
+#endif
 	}
 }
 void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, const GLint *value, int count)
@@ -278,7 +305,9 @@ void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, cons
 	case 2: glUniform2iv(location, count, value); break;
 	case 3: glUniform3iv(location, count, value); break;
 	case 4: glUniform4iv(location, count, value); break;
+#if CHECKDIMENSIONS
 	default: throw std::invalid_argument("`dimension` must be 1 or 2 or 3 or 4.");
+#endif
 	}
 }
 void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, const GLuint *value, int count)
@@ -289,7 +318,9 @@ void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, cons
 	case 2: glUniform2uiv(location, count, value); break;
 	case 3: glUniform3uiv(location, count, value); break;
 	case 4: glUniform4uiv(location, count, value); break;
+#if CHECKDIMENSIONS
 	default: throw std::invalid_argument("`dimension` must be 1 or 2 or 3 or 4.");
+#endif
 	}
 }
 void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, const GLdouble *value, int count)
@@ -300,7 +331,9 @@ void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, cons
 	case 2: glUniform2dv(location, count, value); break;
 	case 3: glUniform3dv(location, count, value); break;
 	case 4: glUniform4dv(location, count, value); break;
+#if CHECKDIMENSIONS
 	default: throw std::invalid_argument("`dimension` must be 1 or 2 or 3 or 4.");
+#endif
 	}
 }
 void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, const GLint64 *value, int count)
@@ -311,7 +344,9 @@ void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, cons
 	case 2: glUniform2i64vARB(location, count, value); break;
 	case 3: glUniform3i64vARB(location, count, value); break;
 	case 4: glUniform4i64vARB(location, count, value); break;
+#if CHECKDIMENSIONS
 	default: throw std::invalid_argument("`dimension` must be 1 or 2 or 3 or 4.");
+#endif
 	}
 }
 void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, const GLuint64 *value, int count)
@@ -322,7 +357,9 @@ void GLShaderProgram::SetUniform(GLUniformLocation location, int dimension, cons
 	case 2: glUniform2ui64vARB(location, count, value); break;
 	case 3: glUniform3ui64vARB(location, count, value); break;
 	case 4: glUniform4ui64vARB(location, count, value); break;
+#if CHECKDIMENSIONS
 	default: throw std::invalid_argument("`dimension` must be 1 or 2 or 3 or 4.");
+#endif
 	}
 }
 
