@@ -83,7 +83,7 @@ public:
 		auto Attribs = BoxShader.GetActiveAttribs();
 		for (auto &it : Attribs)
 		{
-			std::cout << GLAttribTypeToString(it.Type) << " " << it.Name << "; // " << it.Size << std::endl;
+			std::cout << AttribTypeToString(it.Type) << " " << it.Name << "; // " << it.Size << std::endl;
 		}
 
 		std::cout
@@ -93,7 +93,7 @@ public:
 		auto Uniforms = BoxShader.GetActiveUniforms();
 		for (auto &it : Uniforms)
 		{
-			std::cout << GLUniformTypeToString(it.Type) << " " << it.Name << "; // " << it.Size << std::endl;
+			std::cout << UniformTypeToString(it.Type) << " " << it.Name << "; // " << it.Size << std::endl;
 		}
 	}
 
