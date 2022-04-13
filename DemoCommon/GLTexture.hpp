@@ -165,6 +165,16 @@ namespace GLRenderer
 	GLsizei GetChannelCount(TextureFormatEnum Format);
 	GLsizei GetTexelSize(TextureFormatEnum Format, TextureDataTypeEnum DataType);
 
+	enum class TextureCubeMapFace
+	{
+		PositiveX = 0x8515,
+		NegativeX = 0x8516,
+		PositiveY = 0x8517,
+		NegativeY = 0x8518,
+		PositiveZ = 0x8519,
+		NegativeZ = 0x851A
+	};
+
 	class GLSampler
 	{
 	public:
@@ -194,21 +204,38 @@ namespace GLRenderer
 	{
 	protected:
 		GLenum Object;
+		TextureTypeEnum TextureType;
 		GLsizei Width;
 		GLsizei Height;
 		GLsizei Depth;
+		GLsizei LayerCount;
 		TextureFormatEnum TextureFormat;
 		TextureInternalFormatEnum InternalFormat;
 		GLSampler Sampler;
 		TextureDataTypeEnum ArtifactType;
-		GLBufferObject PBO;
+		GLsizei BufferSize;
+		GLsizei SampleCount;
+		GLboolean FixedSampleLocations;
+		std::shared_ptr<GLBufferObject> PBO;
+
+		GLTexture(TextureTypeEnum TextureType, GLsizei Width, GLsizei Height, GLsizei Depth, GLsizei LayerCount, GLsizei BufferSize, GLsizei SampleCount, GLboolean FixedSampleLocations, const TextureFormatEnum TextureFormat, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
 
 	public:
 		GLTexture() = delete;
-		GLTexture(GLsizei Width, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
-		GLTexture(GLsizei Width, GLsizei Height, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
-		GLTexture(GLsizei Width, GLsizei Height, GLsizei Depth, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
-		GLTexture(TextureTypeEnum TextureType, GLsizei Width, GLsizei Height, GLsizei Depth, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+
+		static GLTexture Create1D(GLsizei Size, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+		static GLTexture Create2D(GLsizei Width, GLsizei Height, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+		static GLTexture Create3D(GLsizei Width, GLsizei Height, GLsizei Depth, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+
+		static GLTexture CreateBuffer(GLsizei Size, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+		static GLTexture CreateRect(GLsizei Width, GLsizei Height, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+		static GLTexture CreateCubeMap(GLsizei Size, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+
+		static GLTexture Create1DArray(GLsizei Size, GLsizei LayerCount, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+		static GLTexture Create2DArray(GLsizei Width, GLsizei Height, GLsizei LayerCount, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+
+		static GLTexture Create2DMS(GLsizei Width, GLsizei Height, GLsizei SampleCount, GLboolean FixedSampleLocations, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
+		static GLTexture Create2DMSArray(GLsizei Width, GLsizei Height, GLsizei SampleCount, GLboolean FixedSampleLocations, GLsizei LayerCount, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
 
 		inline operator GLuint() const { return Object; }
 		inline GLsizei GetWidth() const { return Width; }
@@ -216,6 +243,8 @@ namespace GLRenderer
 		inline GLsizei GetDepth() const { return Depth; }
 		inline TextureInternalFormatEnum GetInternalFormat() const { return InternalFormat; }
 		inline GLSampler GetSampler() const { return Sampler; }
-		inline GLBufferObject &GetPBO() { return PBO; }
+		inline GLBufferObject &GetPBO() { return *PBO; }
+
+
 	};
 }

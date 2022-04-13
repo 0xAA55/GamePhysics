@@ -218,68 +218,166 @@ namespace GLRenderer
 		glTexParameterfv(Target, GL_TEXTURE_BORDER_COLOR, &BorderColor.x);
 	}
 
-	GLTexture::GLTexture(TextureTypeEnum TextureType, GLsizei Width, GLsizei Height, GLsizei Depth, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData) :
-		Object(), Width(Width), Height(Height), Depth(Depth), InternalFormat(InternalFormat), TextureFormat(GetTextureFormat(InternalFormat)), Sampler(Sampler), ArtifactType(ArtifactType),
-		PBO(BufferType::PixelUnpackBuffer, Depth * Height * CalcBitmapPitch(Width, GetTexelSize(GetTextureFormat(InternalFormat), ArtifactType) * 8), BufferUsage::StreamRead)
-	{
-		GLenum Target = static_cast<GLenum>(TextureType);
-		GLint TexIF = static_cast<GLint>(InternalFormat);
-		GLenum TexF = static_cast<GLenum>(TextureFormat);
-		GLenum TexT = static_cast<GLenum>(ArtifactType);
+    bool IsCube(TextureTypeEnum TextureType)
+    {
+        return TextureType == TextureTypeEnum::TextureCubeMap || TextureType == TextureTypeEnum::TextureCubeMapArray;
+    }
 
-		glGenTextures(1, &Object);
-		glBindTexture(Target, Object);
-		Sampler.SetSamplerParamsForTexture(TextureType);
+    GLTexture::GLTexture(TextureTypeEnum TextureType, GLsizei Width, GLsizei Height, GLsizei Depth, GLsizei LayerCount, GLsizei BufferSize, GLsizei SampleCount, GLboolean FixedSampleLocations, const TextureFormatEnum TextureFormat, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData) :
+        TextureType(TextureType), Object(), Width(Width), Height(Height), Depth(Depth), LayerCount(LayerCount), BufferSize(BufferSize), SampleCount(SampleCount), FixedSampleLocations(FixedSampleLocations), InternalFormat(InternalFormat), TextureFormat(TextureFormat), Sampler(Sampler), ArtifactType(ArtifactType)
+    {
 
-		PBO.Bind();
-		if (TextureData) std::memcpy(PBO.MapWO(), TextureData, PBO.GetLength());
-		else std::memset(PBO.MapWO(), 0, PBO.GetLength());
-		PBO.Unmap();
-		switch (TextureType)
-		{
-		case TextureTypeEnum::Texture1D:
-			glTexImage1D(Target, 0, TexIF, Width, 0, TexF, TexT, nullptr);
-			break;
-		case TextureTypeEnum::Texture2D:
-			glTexImage2D(Target, 0, TexIF, Width, Height, 0, TexF, TexT, nullptr);
-			break;
-		case TextureTypeEnum::Texture3D:
-			glTexImage3D(Target, 0, TexIF, Width, Height, Depth, 0, TexF, TexT, nullptr);
-			break;
-		case TextureTypeEnum::TextureRect:
-			glTexImage2D(Target, 0, TexIF, Width, Height, 0, TexF, TexT, nullptr);
-			break;
-		case TextureTypeEnum::TextureBuffer:
-			glTexImage1D(Target, 0, TexIF, Width, 0, TexF, TexT, nullptr);
-			break;
-		case TextureTypeEnum::TextureCubeMap:
+        PBO = std::shared_ptr<GLBufferObject>(new GLBufferObject(BufferType::PixelUnpackBuffer, BufferSize, BufferUsage::StreamRead));
+        PBO->Bind();
+        if (TextureData) std::memcpy(PBO->MapWO(), TextureData, PBO->GetLength());
+        else std::memset(PBO->MapWO(), 0, PBO->GetLength());
+        PBO->Unmap();
+    }
 
-		case TextureTypeEnum::Texture1DArray:
+    GLTexture GLTexture::Create1D(GLsizei Size, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Size, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLTexture Ret = GLTexture(TextureTypeEnum::Texture1D, Size, 1, 1, 1, LineSize, 1, 0, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
 
-		case TextureTypeEnum::Texture2DArray:
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage1D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Size, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
+        Ret.PBO->Unbind();
+        return Ret;
+    }
 
-		case TextureTypeEnum::TextureCubeMapArray:
+    GLTexture GLTexture::Create2D(GLsizei Width, GLsizei Height, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Width, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLsizei PlaneSize = LineSize * Height;
+        GLTexture Ret = GLTexture(TextureTypeEnum::Texture2D, Width, Height, 1, 1, PlaneSize, 1, 0, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
 
-		case TextureTypeEnum::Texture2DMultisample:
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage2D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Width, Height, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
+        Ret.PBO->Unbind();
+        return Ret;
+    }
 
-		case TextureTypeEnum::Texture2DMultisampleArray:
+    GLTexture GLTexture::Create3D(GLsizei Width, GLsizei Height, GLsizei Depth, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Width, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLsizei PlaneSize = LineSize * Height;
+        GLsizei VolumeSize = PlaneSize * Depth;
+        GLTexture Ret = GLTexture(TextureTypeEnum::Texture3D, Width, Height, Depth, 1, PlaneSize, 1, 0, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
 
-		}
-		PBO.Unbind();
-	}
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage3D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Width, Height, Depth, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
+        Ret.PBO->Unbind();
+        return Ret;
+    }
 
-	GLTexture::GLTexture(GLsizei Width, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr) :
-		GLTexture(TextureTypeEnum::Texture1D, Width, 1, 1, InternalFormat, Sampler, ArtifactType, TextureData)
-	{
-	}
+    GLTexture GLTexture::CreateBuffer(GLsizei Size, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Size, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLTexture Ret = GLTexture(TextureTypeEnum::TextureBuffer, Size, 1, 1, 1, LineSize, 1, 0, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
 
-	GLTexture::GLTexture(GLsizei Width, GLsizei Height, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr) :
-		GLTexture(TextureTypeEnum::Texture2D, Width, Height, 1, InternalFormat, Sampler, ArtifactType, TextureData)
-	{
-	}
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage1D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Size, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
+        Ret.PBO->Unbind();
+        return Ret;
+    }
 
-	GLTexture::GLTexture(GLsizei Width, GLsizei Height, GLsizei Depth, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr) :
-		GLTexture(TextureTypeEnum::Texture3D, Width, Height, Depth, InternalFormat, Sampler, ArtifactType, TextureData)
-	{
-	}
+    GLTexture GLTexture::CreateRect(GLsizei Width, GLsizei Height, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Width, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLsizei PlaneSize = LineSize * Height;
+        GLTexture Ret = GLTexture(TextureTypeEnum::TextureRect, Width, Height, 1, 1, PlaneSize, 1, 0, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
+
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage2D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Width, Height, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
+        Ret.PBO->Unbind();
+        return Ret;
+    }
+
+    GLTexture GLTexture::CreateCubeMap(GLsizei Size, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Size, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLsizei PlaneSize = LineSize * Size;
+        GLTexture Ret = GLTexture(TextureTypeEnum::TextureCubeMap, Size, Size, 1, 1, PlaneSize * 6, 1, 0, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
+
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, static_cast<GLint>(InternalFormat), Size, Size, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), reinterpret_cast<const void *>(static_cast<size_t>(PlaneSize) * 0));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, static_cast<GLint>(InternalFormat), Size, Size, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), reinterpret_cast<const void *>(static_cast<size_t>(PlaneSize) * 1));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, static_cast<GLint>(InternalFormat), Size, Size, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), reinterpret_cast<const void *>(static_cast<size_t>(PlaneSize) * 2));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, static_cast<GLint>(InternalFormat), Size, Size, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), reinterpret_cast<const void *>(static_cast<size_t>(PlaneSize) * 3));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, static_cast<GLint>(InternalFormat), Size, Size, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), reinterpret_cast<const void *>(static_cast<size_t>(PlaneSize) * 4));
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, static_cast<GLint>(InternalFormat), Size, Size, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), reinterpret_cast<const void *>(static_cast<size_t>(PlaneSize) * 5));
+        Ret.PBO->Unbind();
+        return Ret;
+    }
+
+    GLTexture GLTexture::Create1DArray(GLsizei Size, GLsizei LayerCount, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Size, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLTexture Ret = GLTexture(TextureTypeEnum::Texture1DArray, Size, 1, 1, LayerCount, LineSize * LayerCount, 1, 0, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
+
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        glTexStorage2D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Size, LayerCount);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage2D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Size, LayerCount, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
+        Ret.PBO->Unbind();
+        return Ret;
+    }
+
+    GLTexture GLTexture::Create2DArray(GLsizei Width, GLsizei Height, GLsizei LayerCount, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Width, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLsizei PlaneSize = LineSize * Height;
+        GLTexture Ret = GLTexture(TextureTypeEnum::Texture2DArray, Width, Height, 1, LayerCount, LineSize * LayerCount, 1, 0, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
+
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        glTexStorage3D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Width, Height, LayerCount);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage3D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Width, Height, LayerCount, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
+        Ret.PBO->Unbind();
+        return Ret;
+    }
+
+    GLTexture GLTexture::Create2DMS(GLsizei Width, GLsizei Height, GLsizei SampleCount, GLboolean FixedSampleLocations, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Width, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLsizei PlaneSize = LineSize * Height;
+        GLTexture Ret = GLTexture(TextureTypeEnum::Texture2DMultisample, Width, Height, 1, 1, PlaneSize, SampleCount, FixedSampleLocations, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
+
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        glTexStorage2DMultisample(static_cast<GLenum>(Ret.TextureType), SampleCount, static_cast<GLint>(InternalFormat), Width, Height, FixedSampleLocations);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage2D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Width, Height, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
+        Ret.PBO->Unbind();
+        return Ret;
+    }
+
+    GLTexture GLTexture::Create2DMSArray(GLsizei Width, GLsizei Height, GLsizei SampleCount, GLboolean FixedSampleLocations, GLsizei LayerCount, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler, const TextureDataTypeEnum ArtifactType, const void *TextureData)
+    {
+        auto TextureFormat = GetTextureFormat(InternalFormat);
+        GLsizei LineSize = CalcBitmapPitch(Width, GetTexelSize(TextureFormat, ArtifactType) * 8);
+        GLsizei PlaneSize = LineSize * Height;
+        GLTexture Ret = GLTexture(TextureTypeEnum::Texture2DMultisampleArray, Width, Height, 1, LayerCount, LineSize * LayerCount, SampleCount, FixedSampleLocations, TextureFormat, InternalFormat, Sampler, ArtifactType, TextureData);
+
+        glBindTexture(static_cast<GLenum>(Ret.TextureType), Ret.Object);
+        glTexStorage3DMultisample(static_cast<GLenum>(Ret.TextureType), SampleCount, static_cast<GLint>(InternalFormat), Width, Height, LayerCount, FixedSampleLocations);
+        Sampler.SetSamplerParamsForTexture(Ret.TextureType);
+        glTexImage3D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Width, Height, LayerCount, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
+        Ret.PBO->Unbind();
+        return Ret;
+    }
 };
