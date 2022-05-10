@@ -216,12 +216,13 @@ namespace GLRenderer
 		GLsizei BufferSize;
 		GLsizei SampleCount;
 		GLboolean FixedSampleLocations;
-		std::shared_ptr<GLBufferObject> PBO;
+		GLBufferObject* PBO;
 
 		GLTexture(TextureTypeEnum TextureType, GLsizei Width, GLsizei Height, GLsizei Depth, GLsizei LayerCount, GLsizei BufferSize, GLsizei SampleCount, GLboolean FixedSampleLocations, const TextureFormatEnum TextureFormat, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
 
 	public:
 		GLTexture() = delete;
+		~GLTexture();
 
 		static GLTexture Create1D(GLsizei Size, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
 		static GLTexture Create2D(GLsizei Width, GLsizei Height, const TextureInternalFormatEnum InternalFormat, const GLSampler &Sampler = GLSampler::DefaultSampler, const TextureDataTypeEnum ArtifactType = TextureDataTypeEnum::UnsignedByte, const void *TextureData = nullptr);
@@ -245,6 +246,6 @@ namespace GLRenderer
 		inline GLSampler GetSampler() const { return Sampler; }
 		inline GLBufferObject &GetPBO() { return *PBO; }
 
-
+		
 	};
 }

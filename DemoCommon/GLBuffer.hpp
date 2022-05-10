@@ -79,7 +79,7 @@ namespace GLRenderer
 	class GLBufferOwnership
 	{
 	protected:
-		std::shared_ptr<GLBufferObject> BufferObject;
+		GLBufferObject* BufferObject;
 
 	public:
 		bool ObjectChanged;
@@ -90,11 +90,6 @@ namespace GLRenderer
 		{}
 
 		inline GLBufferOwnership(GLBufferObject * BufferObject) noexcept :
-			ObjectChanged(false),
-			BufferObject(BufferObject)
-		{}
-
-		inline GLBufferOwnership(std::shared_ptr<GLBufferObject> BufferObject) noexcept :
 			ObjectChanged(false),
 			BufferObject(BufferObject)
 		{}
@@ -111,13 +106,6 @@ namespace GLRenderer
 
 		inline GLBufferOwnership &operator =(GLBufferObject *BufferObject)
 		{
-			this->BufferObject.reset(BufferObject);
-			ObjectChanged = true;
-			return *this;
-		}
-
-		inline GLBufferOwnership &operator =(std::shared_ptr<GLBufferObject> BufferObject)
-		{
 			this->BufferObject = BufferObject;
 			ObjectChanged = true;
 			return *this;
@@ -125,13 +113,13 @@ namespace GLRenderer
 
 		inline operator GLBufferObject() const noexcept { return *BufferObject; }
 		inline GLBufferObject &operator *() const noexcept { return *BufferObject; }
-		inline GLBufferObject *operator ->() const noexcept { return BufferObject.get(); }
-		inline GLBufferObject *Get() const noexcept { return BufferObject.get(); }
-		inline operator bool() const noexcept { return BufferObject.operator bool(); }
+		inline GLBufferObject *operator ->() const noexcept { return BufferObject; }
+		inline GLBufferObject *Get() const noexcept { return BufferObject; }
+		inline operator bool() const noexcept { return BufferObject ? true : false; }
 
 		inline void Discard() noexcept
 		{
-			BufferObject.reset();
+			BufferObject = nullptr;
 			ObjectChanged = true;
 		}
 

@@ -147,6 +147,7 @@ GLShaderProgram::GLShaderProgram(const GLchar *ComputeShaderCode, const uvec3 &N
 
 GLShaderProgram::~GLShaderProgram()
 {
+	delete ComputeNumWorkGroups;
 	glDeleteProgram(Program);
 }
 

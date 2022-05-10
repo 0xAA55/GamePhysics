@@ -91,7 +91,7 @@ namespace GLRenderer
 		std::string InfoLogFS; // Fragment Shader
 		std::string InfoLogCS; // Compute Shader
 		std::string InfoLogLinkage;
-		std::shared_ptr<GLBufferObject> ComputeNumWorkGroups;
+		GLBufferObject* ComputeNumWorkGroups;
 		size_t Hash;
 		
 	public:

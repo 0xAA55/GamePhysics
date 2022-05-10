@@ -227,7 +227,7 @@ namespace GLRenderer
         TextureType(TextureType), Object(), Width(Width), Height(Height), Depth(Depth), LayerCount(LayerCount), BufferSize(BufferSize), SampleCount(SampleCount), FixedSampleLocations(FixedSampleLocations), InternalFormat(InternalFormat), TextureFormat(TextureFormat), Sampler(Sampler), ArtifactType(ArtifactType)
     {
 
-        PBO = std::shared_ptr<GLBufferObject>(new GLBufferObject(BufferType::PixelUnpackBuffer, BufferSize, BufferUsage::StreamRead));
+        PBO = new GLBufferObject(BufferType::PixelUnpackBuffer, BufferSize, BufferUsage::StreamRead);
         PBO->Bind();
         if (TextureData) std::memcpy(PBO->MapWO(), TextureData, PBO->GetLength());
         else std::memset(PBO->MapWO(), 0, PBO->GetLength());
@@ -379,5 +379,10 @@ namespace GLRenderer
         glTexImage3D(static_cast<GLenum>(Ret.TextureType), 0, static_cast<GLint>(InternalFormat), Width, Height, LayerCount, 0, static_cast<GLenum>(TextureFormat), static_cast<GLenum>(ArtifactType), nullptr);
         Ret.PBO->Unbind();
         return Ret;
+    }
+
+    GLTexture::~GLTexture()
+    {
+        delete PBO;
     }
 };
