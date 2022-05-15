@@ -10,48 +10,59 @@ GPWorld::GPWorld() :
 {
 }
 
-void GPWorld::AddRigidBody(std::shared_ptr<GPRigidBody> r)
+GPWorld::~GPWorld()
 {
-	RigidBodies.push_back(r);
+	for (auto p : RigidBodies)
+	{
+		delete p;
+	}
+	RigidBodies.clear();
+}
+
+void GPWorld::AddRigidBody(const GPRigidBody& r)
+{
+	RigidBodies.push_back(new GPRigidBody(r));
 }
 
 void GPWorld::AddRigidBody(const GPRigidBodyCreation &r)
 {
-	RigidBodies.push_back(std::shared_ptr<GPRigidBody>(new GPRigidBody(r)));
+	RigidBodies.push_back(new GPRigidBody(r));
 }
 
-void GPWorld::RemoveRigidBody(GPRigidBody *b)
+void GPWorld::RemoveRigidBody(GPRigidBody *&b)
 {
 	RigidBodies.erase(
 		std::remove_if(RigidBodies.begin(),
 			RigidBodies.end(),
 			[b](const auto &r)
 			{
-				return b == r.get();
+				return b == r;
 			}),
 		RigidBodies.end()
 	);
+	delete b;
+	b = nullptr;
 }
 
 void GPWorld::Tick(double Duration)
 {
 	int i;
 	const double TargetTime = CumulativeTime + Duration;
+	float IntegrationTime = SimulationDeltaTime;
+	if (CumulativeTime + TickSkipThreshold <= TargetTime)
+	{
+		IntegrationTime = (float)Duration;
+	}
+	else if (CumulativeTime + SimulationDeltaTime > TargetTime)
+	{
+		return;
+	}
+	CumulativeTime += IntegrationTime;
 #pragma omp parallel for
 	for (i = 0; (size_t)i < RigidBodies.size(); i++)
 	{
-		std::shared_ptr<GPRigidBody> r = RigidBodies[i];
-		double CurTime = CumulativeTime;
-		if (CurTime + TickSkipThreshold <= TargetTime)
-		{
-			r->Integrate((float)Duration);
-			CurTime += Duration;
-		}
-		else if (CurTime + SimulationDeltaTime <= TargetTime)
-		{
-			r->Integrate((float)SimulationDeltaTime);
-			CurTime += SimulationDeltaTime;
-		}
+		GPRigidBody* r = RigidBodies[i];
+		r->Integrate(IntegrationTime);
 	}
 }
 

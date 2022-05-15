@@ -1,6 +1,6 @@
 #pragma once
 
-#include<memory>
+#include<vector>
 #include<GPMath.hpp>
 #include<GPShape.hpp>
 #include<GPRigidBody.hpp>
@@ -10,7 +10,7 @@ namespace GamePhysics
 	class GPWorld
 	{
 	protected:
-		std::vector<std::shared_ptr<GPRigidBody>> RigidBodies;
+		std::vector<GPRigidBody*> RigidBodies;
 		
 		double SimulationDeltaTime;
 		double TickSkipThreshold;
@@ -20,9 +20,12 @@ namespace GamePhysics
 		vec3 Gravity;
 		
 		GPWorld();
-		void AddRigidBody(std::shared_ptr<GPRigidBody> r);
+		~GPWorld();
+		void AddRigidBody(const GPRigidBody& r);
 		void AddRigidBody(const GPRigidBodyCreation &r);
-		void RemoveRigidBody(GPRigidBody *b);
+		void RemoveRigidBody(GPRigidBody *&b);
 		void Tick(double Duration);
+
+
 	};
 }
