@@ -101,45 +101,16 @@ public:
 	{
 		const GLfloat P = 0.5f, N = -0.5f;
 		const vec3
-			V0 = vec3(N, P, N),
-			V1 = vec3(P, P, N),
-			V2 = vec3(N, N, N),
-			V3 = vec3(P, N, N),
-			V4 = vec3(N, P, P),
-			V5 = vec3(P, P, P),
-			V6 = vec3(N, N, P),
-			V7 = vec3(P, N, P);
+			V0 = vec3(N, P, N), V1 = vec3(P, P, N), V2 = vec3(N, N, N), V3 = vec3(P, N, N),
+			V4 = vec3(N, P, P), V5 = vec3(P, P, P), V6 = vec3(N, N, P), V7 = vec3(P, N, P);
 		Vertex3D Vertices[] =
 		{
-			Vertex3D(V0, vec3(0, 0, -1)),
-			Vertex3D(V1, vec3(0, 0, -1)),
-			Vertex3D(V2, vec3(0, 0, -1)),
-			Vertex3D(V3, vec3(0, 0, -1)),
-
-			Vertex3D(V4, vec3(-1, 0, 0)),
-			Vertex3D(V0, vec3(-1, 0, 0)),
-			Vertex3D(V6, vec3(-1, 0, 0)),
-			Vertex3D(V2, vec3(-1, 0, 0)),
-			
-			Vertex3D(V5, vec3(0, 0, 1)),
-			Vertex3D(V4, vec3(0, 0, 1)),
-			Vertex3D(V7, vec3(0, 0, 1)),
-			Vertex3D(V6, vec3(0, 0, 1)),
-			
-			Vertex3D(V1, vec3(1, 0, 0)),
-			Vertex3D(V5, vec3(1, 0, 0)),
-			Vertex3D(V3, vec3(1, 0, 0)),
-			Vertex3D(V7, vec3(1, 0, 0)),
-			
-			Vertex3D(V4, vec3(0, 1, 0)),
-			Vertex3D(V5, vec3(0, 1, 0)),
-			Vertex3D(V0, vec3(0, 1, 0)),
-			Vertex3D(V1, vec3(0, 1, 0)),
-			
-			Vertex3D(V7, vec3(0, -1, 0)),
-			Vertex3D(V6, vec3(0, -1, 0)),
-			Vertex3D(V3, vec3(0, -1, 0)),
-			Vertex3D(V2, vec3(0, -1, 0))
+			Vertex3D(V0, vec3(0, 0, -1)), Vertex3D(V1, vec3(0, 0, -1)), Vertex3D(V2, vec3(0, 0, -1)), Vertex3D(V3, vec3(0, 0, -1)),
+			Vertex3D(V4, vec3(-1, 0, 0)), Vertex3D(V0, vec3(-1, 0, 0)), Vertex3D(V6, vec3(-1, 0, 0)), Vertex3D(V2, vec3(-1, 0, 0)),
+			Vertex3D(V5, vec3(0, 0, 1)), Vertex3D(V4, vec3(0, 0, 1)), Vertex3D(V7, vec3(0, 0, 1)), Vertex3D(V6, vec3(0, 0, 1)),
+			Vertex3D(V1, vec3(1, 0, 0)), Vertex3D(V5, vec3(1, 0, 0)), Vertex3D(V3, vec3(1, 0, 0)), Vertex3D(V7, vec3(1, 0, 0)),
+			Vertex3D(V4, vec3(0, 1, 0)), Vertex3D(V5, vec3(0, 1, 0)), Vertex3D(V0, vec3(0, 1, 0)), Vertex3D(V1, vec3(0, 1, 0)),
+			Vertex3D(V7, vec3(0, -1, 0)), Vertex3D(V6, vec3(0, -1, 0)), Vertex3D(V3, vec3(0, -1, 0)), Vertex3D(V2, vec3(0, -1, 0))
 		};
 		BoxMesh.VertexBuffer.PushBack(Vertices, countof(Vertices));
 		
