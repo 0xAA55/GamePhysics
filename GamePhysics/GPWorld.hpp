@@ -26,6 +26,6 @@ namespace GamePhysics
 		void RemoveRigidBody(GPRigidBody *&b);
 		void Tick(double Duration);
 
-
+		// https://ppc.cs.aalto.fi/ch3/nowait/
 	};
 }
