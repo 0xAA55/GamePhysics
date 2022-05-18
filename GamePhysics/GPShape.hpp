@@ -11,7 +11,7 @@ namespace GamePhysics
 		quat Rotation;
 
 		// Question: why don't just expose the transform matrix into the public scope to allow it to be accessed and modified directly?
-		// Answer: Don't want the transform matrix to contain any scaling-related transformations.
+		// Answer: A transform matrix is able to contain more transform information than just translation and rotation.
 		mat4 Transform;
 		mat4 InversedTransform;
 		void UpdateTransform();
