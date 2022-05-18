@@ -5,19 +5,24 @@
 
 namespace GamePhysics
 {
+	
+
 	class GPContact
 	{
 	protected:
 		GPRigidBody* RigidBodies[2];
 		vec3 ContactPoint;
 		vec3 ContactNormal;
+		float Restitution;
+		float Friction;
+		float Penetration;
 
 	public:
 		inline vec3 GetContactPoint() const { return ContactPoint; }
 		inline vec3 GetContactNormal() const { return ContactNormal; }
 
 		GPContact() = delete;
-		GPContact(GPRigidBody* B1, GPRigidBody* B2, vec3 ContactPoint, vec3 ContactNormal);
+		GPContact(GPRigidBody* B1, GPRigidBody* B2, vec3 ContactPoint, vec3 ContactNormal, float Restitution, float Friction, float Penetration);
 		~GPContact();
 
 
