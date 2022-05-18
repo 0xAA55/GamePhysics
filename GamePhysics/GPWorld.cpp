@@ -88,7 +88,6 @@ void GPWorld::UpdateMovement(float IntegrationTime)
 
 void GPWorld::Tick(double Duration)
 {
-	int i;
 	const double TargetTime = CumulativeTime + Duration;
 	float IntegrationTime = SimulationDeltaTime;
 	if (CumulativeTime + TickSkipThreshold <= TargetTime)
