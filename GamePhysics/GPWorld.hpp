@@ -4,6 +4,7 @@
 #include<GPMath.hpp>
 #include<GPShape.hpp>
 #include<GPRigidBody.hpp>
+#include<GPContact.hpp>
 
 namespace GamePhysics
 {
@@ -11,10 +12,16 @@ namespace GamePhysics
 	{
 	protected:
 		std::vector<GPRigidBody*> RigidBodies;
+		std::vector<GPContact*> Contacts;
 		
 		double SimulationDeltaTime;
 		double TickSkipThreshold;
 		double CumulativeTime;
+
+		void UpdateMovement(float IntegrationTime);
+		void CheckContact(const GPRigidBody* a, const GPRigidBody*b);
+		void DetectContacts();
+		void ResolveContacts();
 
 	public:
 		vec3 Gravity;

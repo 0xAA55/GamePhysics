@@ -44,6 +44,48 @@ void GPWorld::RemoveRigidBody(GPRigidBody *&b)
 	b = nullptr;
 }
 
+void GPWorld::CheckContact(const GPRigidBody* a, const GPRigidBody* b)
+{
+
+}
+
+void GPWorld::DetectContacts()
+{
+	Contacts.clear();
+
+	ptrdiff_t NumBodies = (ptrdiff_t)RigidBodies.size();
+	if (!NumBodies) return;
+
+#pragma omp parallel
+	{
+		for (ptrdiff_t i = 0; i < NumBodies - 1; i++)
+		{
+#pragma omp for nowait
+			for (ptrdiff_t j = i + 1; j < NumBodies; j++)
+			{
+				CheckContact(RigidBodies[i], RigidBodies[j]);
+			}
+		}
+	}
+}
+
+void GPWorld::ResolveContacts()
+{
+
+}
+
+void GPWorld::UpdateMovement(float IntegrationTime)
+{
+	ptrdiff_t NumBodies = (ptrdiff_t)RigidBodies.size();
+
+#pragma omp parallel for
+	for (ptrdiff_t i = 0; i < NumBodies; i++)
+	{
+		GPRigidBody* r = RigidBodies[i];
+		r->Integrate(IntegrationTime);
+	}
+}
+
 void GPWorld::Tick(double Duration)
 {
 	int i;
@@ -57,12 +99,10 @@ void GPWorld::Tick(double Duration)
 	{
 		return;
 	}
-	CumulativeTime += IntegrationTime;
-#pragma omp parallel for
-	for (i = 0; (size_t)i < RigidBodies.size(); i++)
-	{
-		GPRigidBody* r = RigidBodies[i];
-		r->Integrate(IntegrationTime);
-	}
-}
 
+	UpdateMovement(IntegrationTime);
+	DetectContacts();
+	ResolveContacts();
+
+	CumulativeTime += IntegrationTime;
+}
