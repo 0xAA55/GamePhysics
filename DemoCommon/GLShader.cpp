@@ -174,8 +174,8 @@ void GLShaderProgram::Unuse() const
 #endif
 
 #if CHECKSHADERTYPE
-#define CheckIsCompute() assert(ComputeNumWorkGroups.get() != nullptr)
-#define CheckIsNotCompute() assert(ComputeNumWorkGroups.get() == nullptr)
+#define CheckIsCompute() assert(ComputeNumWorkGroups != nullptr)
+#define CheckIsNotCompute() assert(ComputeNumWorkGroups == nullptr)
 #else
 #define CheckIsCompute()
 #define CheckIsNotCompute()
