@@ -275,6 +275,7 @@
     <ClCompile Include="GPBox.cpp" />
     <ClCompile Include="GPCapsule.cpp" />
     <ClCompile Include="GPContact.cpp" />
+    <ClCompile Include="GPContactSolver.cpp" />
     <ClCompile Include="GPCylinder.cpp" />
     <ClCompile Include="GPMath.cpp" />
     <ClCompile Include="GPPlane.cpp" />
@@ -288,6 +289,7 @@
     <ClInclude Include="GPBox.hpp" />
     <ClInclude Include="GPCapsule.hpp" />
     <ClInclude Include="GPContact.hpp" />
+    <ClInclude Include="GPContactSolver.hpp" />
     <ClInclude Include="GPCylinder.hpp" />
     <ClInclude Include="GPMath.hpp" />
     <ClInclude Include="GPPlane.hpp" />
