@@ -11,6 +11,16 @@ float GPBox::SDF(const vec3 &p) const
 	return length(max(q, 0.0f)) + min(max(q.x, max(q.y, q.z)), 0.0f);
 }
 
+GPShape* GPBox::Clone() const
+{
+	GPShape* ret = new GPBox(*this);
+}
+
+void GPBox::Clone(GPShape& CloneTo, const GPShape& CloneFrom) const
+{
+	CloneTo = CloneFrom;
+}
+
 vec3 GPBox::GetNearestPoint(const vec3 &p) const
 {
 	return min(abs(p), Dimension) * sign(p);

@@ -14,6 +14,16 @@ float GPCapsule::SDF(const vec3 &p) const
 	return length(v) - Radius;
 }
 
+GPShape* GPCapsule::Clone() const
+{
+	GPShape* ret = new GPCapsule(*this);
+}
+
+void GPCapsule::Clone(GPShape& CloneTo, const GPShape& CloneFrom) const
+{
+	CloneTo = CloneFrom;
+}
+
 vec3 GPCapsule::GetNearestPoint(const vec3 &p) const
 {
 	const float HalfHeight = Height * 0.5f;

@@ -42,6 +42,16 @@ void GPPlane::SetABCD(const vec4 &abcd)
 	if (this->abcd.w > 0) this->abcd = -this->abcd;
 }
 
+GPShape* GPPlane::Clone() const
+{
+	GPShape* ret = new GPPlane(*this);
+}
+
+void GPPlane::Clone(GPShape& CloneTo, const GPShape& CloneFrom) const
+{
+	CloneTo = CloneFrom;
+}
+
 vec3 GPPlane::GetNearestPoint(const vec3 &p) const
 {
 	return p + GetNormal() * SDF(p);

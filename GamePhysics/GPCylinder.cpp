@@ -13,6 +13,16 @@ float GPCylinder::SDF(const vec3 &p) const
 	return min(max(d.x, d.y), 0.0f) + length(max(d, 0.0f));
 }
 
+GPShape* GPCylinder::Clone() const
+{
+	GPShape* ret = new GPCylinder(*this);
+}
+
+void GPCylinder::Clone(GPShape& CloneTo, const GPShape& CloneFrom) const
+{
+	CloneTo = CloneFrom;
+}
+
 vec3 GPCylinder::GetNearestPoint(const vec3 &p) const
 {
 	const float HalfHeight = Height * 0.5f;

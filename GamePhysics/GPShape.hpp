@@ -22,6 +22,8 @@ namespace GamePhysics
 		// see: https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
 		virtual float SDF(const vec3 & p) const = 0;
 		virtual vec3 GetNearestPoint(const vec3 &p) const = 0;
+		virtual GPShape* Clone() const = 0;
+		virtual void Clone(GPShape& CloneTo, const GPShape& CloneFrom) const = 0;
 		virtual ~GPShape();
 
 		GPShape();
