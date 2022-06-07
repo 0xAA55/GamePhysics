@@ -8,17 +8,48 @@ GPContactSolver::GPContactSolver(RigidBodyArray& RigidBodiesOfWorld) :
 
 void GPContactSolver::CreateRigidBodySnapshot()
 {
+	ptrdiff_t i, size_src, size_dst;
+	size_src = RigidBodies.size();
+	size_dst = RigidBodySnapshot.size();
 
+	// Do minimum efforts to match the memory size of the rigid bodies
+	if (size_src > size_dst)
+	{
+		RigidBodySnapshot.resize(size_src);
+		for (i = size_dst; i < size_src; i++) RigidBodySnapshot[i] = new GPRigidBody();
+	}
+	else if (size_src < size_dst)
+	{
+		for (i = size_src; i < size_dst; i++) delete RigidBodySnapshot[i];
+		RigidBodySnapshot.resize(size_src);
+	}
+#pragma omp parallel for
+	for (i = 0; i < size_src; i++)
+	{
+		GPRigidBody& Target = *RigidBodySnapshot[i];
+		Target = *RigidBodies[i];
+		for (auto Shape : Target.Shapes)
+		{
+			Shape->SetPositionRotation(Target.Orient * Shape->GetPosition() + Target.Position, Target.Orient * Shape->GetRotation());
+		}
+	}
 }
 
 void GPContactSolver::ClearRigidBodySnapshot()
 {
-
+	for (auto it : RigidBodySnapshot) delete it;
+	RigidBodySnapshot.clear();
 }
 
 float GPContactSolver::SDF(const GPRigidBody* b, const vec3 Point)
 {
-
+	float MinDist = FLT_MAX;
+	for (auto Shape : b->Shapes)
+	{
+		vec3 RelPoint = Shape->GetInversedTransform() * vec4(Point.x, Point.y, Point.z, 1);
+		MinDist = min(MinDist, Shape->SDF(RelPoint));
+	}
+	return MinDist;
 }
 
 void GPContactSolver::CheckContact(const GPRigidBody* a, const GPRigidBody* b)
