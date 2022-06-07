@@ -24,6 +24,22 @@ GPRigidBody::GPRigidBody(const GPRigidBodyCreation &c) :
     UpdateTransform();
 }
 
+GPRigidBody::GPRigidBody(const GPRigidBody& f)
+{
+    size_t NumShapes = f.Shapes.size();
+    *this = f;
+    for (size_t i = 0; i < NumShapes; i++)
+    {
+        // Re-allocate pointers
+        Shapes[i] = f.Shapes[i]->Clone();
+    }
+}
+
+GPRigidBody::~GPRigidBody()
+{
+    for (auto it : Shapes) delete it;
+}
+
 mat4 GPRigidBody::GetTransform()
 {
     return Transform;

@@ -9,6 +9,8 @@ namespace GamePhysics
     class GPRigidBodyCreation
     {
     public:
+        // The pointers of the shapes shouldn't be deleted.
+        // The created `GPRigidBody` owns the shapes.
         std::vector<GPShape*> Shapes;
 
         float Mass;
@@ -51,7 +53,9 @@ namespace GamePhysics
         vec3 LastFrameLinearAccel;
 	public:
         GPRigidBody() = default;
+        GPRigidBody(const GPRigidBody& f);
         GPRigidBody(const GPRigidBodyCreation& c);
+        ~GPRigidBody();
 
         // Attributes
         std::vector<GPShape*> Shapes;
