@@ -13,7 +13,7 @@ float GPSphere::SDF(const vec3 &p) const
 
 GPShape* GPSphere::Clone() const
 {
-	GPShape* ret = new GPSphere(*this);
+	return new GPSphere(*this);
 }
 
 void GPSphere::Clone(GPShape& CloneTo, const GPShape& CloneFrom) const

@@ -13,7 +13,7 @@ float GPBox::SDF(const vec3 &p) const
 
 GPShape* GPBox::Clone() const
 {
-	GPShape* ret = new GPBox(*this);
+	return new GPBox(*this);
 }
 
 void GPBox::Clone(GPShape& CloneTo, const GPShape& CloneFrom) const

@@ -7,7 +7,7 @@ GPWorld::GPWorld() :
 	TickSkipThreshold(1.0),
 	CumulativeTime(0),
 	Gravity(0.0f, -9.8f, 0.0f),
-	ContactSolver(new GPContactSolver(&RigidBodies))
+	ContactSolver(new GPContactSolver(RigidBodies))
 {
 }
 

@@ -15,7 +15,7 @@ float GPCylinder::SDF(const vec3 &p) const
 
 GPShape* GPCylinder::Clone() const
 {
-	GPShape* ret = new GPCylinder(*this);
+	return new GPCylinder(*this);
 }
 
 void GPCylinder::Clone(GPShape& CloneTo, const GPShape& CloneFrom) const

@@ -16,7 +16,7 @@ float GPCapsule::SDF(const vec3 &p) const
 
 GPShape* GPCapsule::Clone() const
 {
-	GPShape* ret = new GPCapsule(*this);
+	return new GPCapsule(*this);
 }
 
 void GPCapsule::Clone(GPShape& CloneTo, const GPShape& CloneFrom) const

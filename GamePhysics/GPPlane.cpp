@@ -44,7 +44,7 @@ void GPPlane::SetABCD(const vec4 &abcd)
 
 GPShape* GPPlane::Clone() const
 {
-	GPShape* ret = new GPPlane(*this);
+	return new GPPlane(*this);
 }
 
 void GPPlane::Clone(GPShape& CloneTo, const GPShape& CloneFrom) const
