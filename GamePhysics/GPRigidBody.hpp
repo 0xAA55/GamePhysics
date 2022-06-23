@@ -51,6 +51,7 @@ namespace GamePhysics
         vec3 Acceleration;
 
         vec3 LastFrameLinearAccel;
+
 	public:
         GPRigidBody() = default;
         GPRigidBody(const GPRigidBody& f);

@@ -24,13 +24,33 @@ GPRigidBody::GPRigidBody(const GPRigidBodyCreation &c) :
     UpdateTransform();
 }
 
-GPRigidBody::GPRigidBody(const GPRigidBody& f)
+GPRigidBody::GPRigidBody(const GPRigidBody& f) :
+    Mass(f.Mass),
+    InversedMass(f.InversedMass),
+    InertiaTensor(f.InertiaTensor),
+    InversedInertiaTensor(f.InversedInertiaTensor),
+    Transform(f.Transform),
+    ForceAccum(f.ForceAccum),
+    TorqueAccum(f.TorqueAccum),
+    Acceleration(f.Acceleration),
+    LastFrameLinearAccel(f.LastFrameLinearAccel),
+    Shapes(),
+    Movable(f.Movable),
+    Sleepable(f.Sleepable),
+    Friction(f.Friction),
+    Restitution(f.Restitution),
+    LinearDamp(f.LinearDamp),
+    AngularDamp(f.AngularDamp),
+    Position(f.Position),
+    Orient(f.Orient),
+    Velocity(f.Velocity),
+    Rotation(f.Rotation),
+    IsAwake(f.IsAwake)
 {
-    size_t NumShapes = f.Shapes.size();
-    *this = f;
-    for (size_t i = 0; i < NumShapes; i++)
+    size_t i, NumShapes = f.Shapes.size();
+    Shapes.resize(NumShapes);
+    for (i = 0; i < NumShapes; i++)
     {
-        // Re-allocate pointers
         Shapes[i] = f.Shapes[i]->Clone();
     }
 }

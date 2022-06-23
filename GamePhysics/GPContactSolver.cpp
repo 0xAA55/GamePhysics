@@ -2,13 +2,13 @@
 using namespace GamePhysics;
 
 GPContactSolver::GPContactSolver(RigidBodyArray& RigidBodiesOfWorld) :
-	RigidBodies(RigidBodiesOfWorld)
+	Contacts(), RigidBodies(RigidBodiesOfWorld), RigidBodySnapshot()
 {
 }
 
 void GPContactSolver::CreateRigidBodySnapshot()
 {
-	ptrdiff_t i, size_src, size_dst;
+	ptrdiff_t i, j, size_src, size_dst;
 	size_src = RigidBodies.size();
 	size_dst = RigidBodySnapshot.size();
 
@@ -16,7 +16,10 @@ void GPContactSolver::CreateRigidBodySnapshot()
 	if (size_src > size_dst)
 	{
 		RigidBodySnapshot.resize(size_src);
-		for (i = size_dst; i < size_src; i++) RigidBodySnapshot[i] = new GPRigidBody();
+		for (i = size_dst; i < size_src; i++)
+		{
+			RigidBodySnapshot[i] = new GPRigidBody(*RigidBodies[i]);
+		}
 	}
 	else if (size_src < size_dst)
 	{
@@ -30,6 +33,7 @@ void GPContactSolver::CreateRigidBodySnapshot()
 		Target = *RigidBodies[i];
 		for (auto Shape : Target.Shapes)
 		{
+			// Transform all the shapes to be relative to 
 			Shape->SetPositionRotation(Target.Orient * Shape->GetPosition() + Target.Position, Target.Orient * Shape->GetRotation());
 		}
 	}
