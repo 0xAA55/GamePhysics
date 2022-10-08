@@ -2,6 +2,7 @@
 #include<GLRenderer.hpp>
 #include<GamePhysics.hpp>
 #include<iostream>
+#include<GLBVMesh.hpp>
 
 #ifdef _WIN32
 #include<Windows.h>
@@ -37,7 +38,7 @@ public:
 	GPWorld World;
 	double LastUpdateTime;
 	GLShaderProgram BoxShader;
-	GLMesh<Vertex3D, mat4, MeshElementType::UnsignedByte> BoxMesh;
+	GLBVMesh<Vertex3D, mat4, MeshElementType::UnsignedByte> BoxMesh;
 	vec3 CameraPos;
 	vec3 CamYawPitchRoll;
 
