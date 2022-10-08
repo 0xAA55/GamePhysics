@@ -75,5 +75,4 @@ namespace GLRenderer
 		void Unbind() const;
 		bool IsBind() const;
 	};
-
 }

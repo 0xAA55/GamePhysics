@@ -71,6 +71,7 @@ bool GLBufferObject::IsBind() const
 {
 	GLenum Check = 0;
 	GLint BindObj = 0;
+#if _DEBUG
 	switch (Type)
 	{
 	case BufferType::ArrayBuffer: Check = GL_ARRAY_BUFFER_BINDING; break;
@@ -89,6 +90,9 @@ bool GLBufferObject::IsBind() const
 	case BufferType::UniformBuffer: Check = GL_UNIFORM_BUFFER_BINDING; break;
 	default: throw std::invalid_argument("Unknown buffer type.");
 	}
+#else
+	Check = static_cast<GLenum>(Type);
+#endif
 	glGetIntegerv(Check, &BindObj);
 	return BindObj == Object;
 }
