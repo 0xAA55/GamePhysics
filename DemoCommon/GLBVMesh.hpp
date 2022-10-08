@@ -1,13 +1,11 @@
 #pragma once
 #include<GLRendererBase.hpp>
 #include<unordered_map>
-#include<GLShader.hpp>
 #include<GLBufferVector.hpp>
 #include<GLMesh.hpp>
 #include<type_traits>
 namespace GLRenderer
 {
-
 	template<
 		typename VertexType,
 		typename InstanceType,
@@ -25,7 +23,6 @@ namespace GLRenderer
 		using InstanceBufferType = std::conditional_t<InstanceBufferUseCachedBuffer, GLBufferVector<InstanceType>, GLBufferVectorNC<InstanceType>>;
 		using CommandBufferType = std::conditional_t<CommandBufferUseCachedBuffer, GLBufferVector<DrawCommand>, GLBufferVectorNC<DrawCommand>>;
 		using AttribDescArray = std::vector<AttribDesc>;
-		using VAOContainer = std::unordered_map<GLShaderProgram, GLVAO, GLShaderProgramHasher>;
 
 		VAOContainer VAOsForEachShader;
 		GLVAO& Describe(const GLShaderProgram &Shader)

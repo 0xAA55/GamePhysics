@@ -63,6 +63,8 @@ namespace GLRenderer
 		void DrawByElements(MeshPrimitiveType PrimitiveType, MeshElementType ElementType, GLsizei VertexCount, GLsizei InstanceCount) const;
 	};
 
+	using VAOContainer = std::unordered_map<GLShaderProgram, GLVAO, GLShaderProgramHasher>;
+
 	class AttribDesc
 	{
 	public:
@@ -82,4 +84,5 @@ namespace GLRenderer
 		void Describe(const GLShaderProgram& Shader, GLsizei Stride, GLuint AVD) const;
 		inline GLsizei GetSizeBytes() const { return GetNumUnits(Type) * GetUnitLength(Type); }
 	};
+
 }
