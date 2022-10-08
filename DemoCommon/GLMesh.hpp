@@ -1,9 +1,7 @@
 #pragma once
 #include<GLRendererBase.hpp>
-#include<unordered_map>
-#include<GLBuffer.hpp>
+#include<GLBufferObject.hpp>
 #include<GLShader.hpp>
-#include<type_traits>
 namespace GLRenderer
 {
 	class AttribDesc;
@@ -65,153 +63,6 @@ namespace GLRenderer
 		void DrawByElements(MeshPrimitiveType PrimitiveType, MeshElementType ElementType, GLsizei VertexCount, GLsizei InstanceCount) const;
 	};
 
-	template<
-		typename VertexType,
-		typename InstanceType,
-		MeshElementType ElementType = MeshElementType::UnsignedInt,
-		bool VertexBufferUseCachedBuffer = true,
-		bool IndexBufferUseCachedBuffer = true,
-		bool InstanceBufferUseCachedBuffer = true,
-		bool CommandBufferUseCachedBuffer = true>
-	class GLMesh
-	{
-	protected:
-		using IndexType = TypeOfElement<ElementType>;
-		using VertexBufferType = std::conditional_t<VertexBufferUseCachedBuffer, GLBufferVector<VertexType>, GLBufferVectorNC<VertexType>>;
-		using IndexBufferType = std::conditional_t<IndexBufferUseCachedBuffer, GLBufferVector<IndexType>, GLBufferVectorNC<IndexType>>;
-		using InstanceBufferType = std::conditional_t<InstanceBufferUseCachedBuffer, GLBufferVector<InstanceType>, GLBufferVectorNC<InstanceType>>;
-		using CommandBufferType = std::conditional_t<CommandBufferUseCachedBuffer, GLBufferVector<DrawCommand>, GLBufferVectorNC<DrawCommand>>;
-		using AttribDescArray = std::vector<AttribDesc>;
-		using VAOContainer = std::unordered_map<GLShaderProgram, GLVAO, GLShaderProgramHasher>;
-
-		VAOContainer VAOsForEachShader;
-		GLVAO& Describe(const GLShaderProgram &Shader)
-		{
-			VertexBuffer.WatchForObjectChanged();
-			InstanceBuffer.WatchForObjectChanged();
-			VertexBuffer.Flush();
-			InstanceBuffer.Flush();
-			bool ShouldDescribe = VertexBuffer.CheckObjectChanged() || InstanceBuffer.CheckObjectChanged();
-			GLVAO &VAO = VAOsForEachShader[Shader];
-			if (!VAO.IsDescribed()) ShouldDescribe = true;
-			VAO.Bind();
-			if (ShouldDescribe)
-			{
-				if (VertexBuffer.Size())
-				{
-					GLsizei LastOffset = 0;
-					VertexBuffer.Bind();
-					for (auto &it : VertexBufferFormat)
-					{
-						if (it.Offset == -1) it.Offset = LastOffset;
-						LastOffset = it.Offset + it.GetSizeBytes();
-						it.Describe(Shader, sizeof(VertexType), 0);
-					}
-					VertexBuffer.Unbind();
-				}
-				if (InstanceBuffer.Size())
-				{
-					GLsizei LastOffset = 0;
-					InstanceBuffer.Bind();
-					for (auto &it : InstanceBufferFormat)
-					{
-						if (it.Offset == -1) it.Offset = LastOffset;
-						LastOffset = it.Offset + it.GetSizeBytes();
-						it.Describe(Shader, sizeof(InstanceType), 1);
-					}
-					InstanceBuffer.Unbind();
-				}
-				VAO.SetDescribed();
-			}
-			return VAO;
-		}
-
-	public:
-		VertexBufferType VertexBuffer;
-		IndexBufferType IndexBuffer;
-		InstanceBufferType InstanceBuffer;
-		CommandBufferType CommandBuffer;
-		AttribDescArray VertexBufferFormat;
-		AttribDescArray InstanceBufferFormat;
-		MeshPrimitiveType PrimitiveType;
-
-		GLMesh(MeshPrimitiveType PrimitiveType) :
-			PrimitiveType(PrimitiveType),
-			VertexBuffer(BufferType::ArrayBuffer, BufferUsage::StaticDraw),
-			IndexBuffer(BufferType::ElementArrayBuffer, BufferUsage::StaticDraw),
-			InstanceBuffer(BufferType::ArrayBuffer, BufferUsage::StreamDraw),
-			CommandBuffer(BufferType::DrawIndirectBuffer, BufferUsage::StaticDraw)
-		{
-		}
-
-		GLMesh(MeshPrimitiveType PrimitiveType, const std::vector<VertexType> &VertexData) :
-			PrimitiveType(PrimitiveType),
-			VertexBuffer(BufferType::ArrayBuffer, BufferUsage::StaticDraw, VertexData),
-			IndexBuffer(BufferType::ElementArrayBuffer, BufferUsage::StaticDraw),
-			InstanceBuffer(BufferType::ArrayBuffer, BufferUsage::StreamDraw),
-			CommandBuffer(BufferType::DrawIndirectBuffer, BufferUsage::StaticDraw)
-		{
-		}
-
-		GLMesh(MeshPrimitiveType PrimitiveType, const std::vector<IndexType> &IndexData) :
-			PrimitiveType(PrimitiveType),
-			VertexBuffer(BufferType::ArrayBuffer, BufferUsage::StaticDraw),
-			IndexBuffer(BufferType::ElementArrayBuffer, BufferUsage::StaticDraw, IndexData),
-			InstanceBuffer(BufferType::ArrayBuffer, BufferUsage::StreamDraw),
-			CommandBuffer(BufferType::DrawIndirectBuffer, BufferUsage::StaticDraw)
-		{
-		}
-
-		GLMesh(MeshPrimitiveType PrimitiveType, const std::vector<VertexType> &VertexData, const std::vector<IndexType> &IndexData) :
-			PrimitiveType(PrimitiveType),
-			VertexBuffer(BufferType::ArrayBuffer, BufferUsage::StaticDraw, VertexData),
-			IndexBuffer(BufferType::ElementArrayBuffer, BufferUsage::StaticDraw, IndexData),
-			InstanceBuffer(BufferType::ArrayBuffer, BufferUsage::StreamDraw),
-			CommandBuffer(BufferType::DrawIndirectBuffer, BufferUsage::StaticDraw)
-		{
-		}
-
-		GLMesh(const GLMesh &CopyFrom) :
-			PrimitiveType(CopyFrom.PrimitiveType),
-			VertexBufferFormat(CopyFrom.VertexBufferFormat),
-			InstanceBufferFormat(CopyFrom.InstanceBufferFormat),
-			VertexBuffer(CopyFrom.VertexBuffer),
-			IndexBuffer(CopyFrom.IndexBuffer),
-			InstanceBuffer(CopyFrom.InstanceBuffer),
-			CommandBuffer(CopyFrom.DrawIndirectBuffer)
-		{
-		}
-
-		void Draw(const GLShaderProgram &Shader)
-		{
-			Shader.Use();
-			auto &VAO = Describe(Shader);
-			if (IndexBuffer.Size())
-			{
-				IndexBuffer.Bind();
-				if (CommandBuffer.Size())
-				{
-					CommandBuffer.Bind();
-					VAO.DrawByElements(PrimitiveType, ElementType, static_cast<GLsizei>(CommandBuffer.Size()));
-					CommandBuffer.Unbind();
-				}
-				else VAO.DrawByElements(PrimitiveType, ElementType, static_cast<GLsizei>(IndexBuffer.Size()), static_cast<GLsizei>(InstanceBuffer.Size()));
-				IndexBuffer.Unbind();
-			}
-			else
-			{
-				if (CommandBuffer.Size())
-				{
-					CommandBuffer.Bind();
-					VAO.Draw(PrimitiveType, static_cast<GLsizei>(CommandBuffer.Size()));
-					CommandBuffer.Unbind();
-				}
-				else VAO.Draw(PrimitiveType, static_cast<GLsizei>(VertexBuffer.Size()), static_cast<GLsizei>(InstanceBuffer.Size()));
-			}
-			Shader.Unuse();
-		}
-	};
-
 	class AttribDesc
 	{
 	public:
@@ -228,42 +79,7 @@ namespace GLRenderer
 		AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
 		AttribDesc(std::string Name, std::string Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
 
-		void Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint AVD) const;
+		void Describe(const GLShaderProgram& Shader, GLsizei Stride, GLuint AVD) const;
 		inline GLsizei GetSizeBytes() const { return GetNumUnits(Type) * GetUnitLength(Type); }
 	};
-
-	class WaveFrontObjVertex
-	{
-		vec3 Position;
-		vec3 Normal;
-		vec2 TexCoord;
-	};
-
-	extern template GLBufferVector<WaveFrontObjVertex>;
-	extern template GLBufferVector<DrawCommand>;
-	extern template GLBufferVectorNC<WaveFrontObjVertex>;
-	extern template GLBufferVectorNC<DrawCommand>;
-
-	extern template GLBufferVector<GLubyte>;
-	extern template GLBufferVector<GLushort>;
-	extern template GLBufferVector<GLuint>;
-
-	extern template GLBufferVectorNC<GLubyte>;
-	extern template GLBufferVectorNC<GLushort>;
-	extern template GLBufferVectorNC<GLuint>;
-
-	template<
-		typename InstanceType,
-		MeshElementType ElementType = MeshElementType::UnsignedInt,
-		bool VertexBufferUseCachedBuffer = true,
-		bool IndexBufferUseCachedBuffer = true,
-		bool InstanceBufferUseCachedBuffer = true,
-		bool CommandBufferUseCachedBuffer = true>
-	using GLObjMesh = GLMesh<WaveFrontObjVertex,
-		InstanceType,
-		ElementType,
-		VertexBufferUseCachedBuffer,
-		IndexBufferUseCachedBuffer,
-		InstanceBufferUseCachedBuffer,
-		CommandBufferUseCachedBuffer>;
 }

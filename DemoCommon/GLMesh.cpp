@@ -64,7 +64,7 @@ AttribDesc::AttribDesc(std::string Name, std::string Type, GLsizei Offset, bool 
 {
 }
 
-void AttribDesc::Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint AVD) const
+void AttribDesc::Describe(const GLShaderProgram& Shader, GLsizei Stride, GLuint AVD) const
 {
 	GLint Location = GLVertexAttribLocation(Name);
 	if (Location < 0) return;
@@ -73,7 +73,7 @@ void AttribDesc::Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint 
 	if (Offset == -1) throw std::invalid_argument("From AttribDesc::Describe(): `Offset` is -1, which means that the offset should be automatically calculated.");
 	for (GLint i = 0; i < RowCount; i++)
 	{
-		const void *PtrParam = reinterpret_cast<const void *>(static_cast<size_t>(CurOffset));
+		const void* PtrParam = reinterpret_cast<const void*>(static_cast<size_t>(CurOffset));
 		GLenum GLType = static_cast<GLenum>(VarType);
 		glEnableVertexAttribArray(Location);
 		if (AsFloat) glVertexAttribPointer(Location, ColCount, GLType, Normalize, Stride, PtrParam);
@@ -86,15 +86,5 @@ void AttribDesc::Describe(const GLShaderProgram &Shader, GLsizei Stride, GLuint 
 	}
 }
 
-template GLBufferVector<WaveFrontObjVertex>;
-template GLBufferVector<DrawCommand>;
-template GLBufferVectorNC<WaveFrontObjVertex>;
-template GLBufferVectorNC<DrawCommand>;
 
-template GLBufferVector<GLubyte>;
-template GLBufferVector<GLushort>;
-template GLBufferVector<GLuint>;
 
-template GLBufferVectorNC<GLubyte>;
-template GLBufferVectorNC<GLushort>;
-template GLBufferVectorNC<GLuint>;
