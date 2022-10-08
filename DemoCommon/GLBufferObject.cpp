@@ -1,4 +1,4 @@
-#include"GLBuffer.hpp"
+#include"GLBufferObject.hpp"
 #include<GL/glew.h>
 #include<cstdlib>
 #include<cassert>
@@ -178,9 +178,4 @@ void GLBufferObject::GetData(size_t Offset, size_t Length, void *DataOut) const
 	void *MapPtr = glMapBufferRange(static_cast<GLenum>(Type), Offset, Length, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT);
 	std::memcpy(DataOut, MapPtr, Length);
 	glUnmapBuffer(static_cast<GLenum>(Type));
-}
-
-BufferCastingError::BufferCastingError(std::string What) noexcept :
-	std::runtime_error(What)
-{
 }
