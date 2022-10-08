@@ -1,6 +1,6 @@
 #pragma once
 #include<GLRendererBase.hpp>
-#include<GLBuffer.hpp>
+#include<GLBufferObject.hpp>
 namespace GLRenderer
 {
 	enum class MinFilterEnum
@@ -245,7 +245,5 @@ namespace GLRenderer
 		inline TextureInternalFormatEnum GetInternalFormat() const { return InternalFormat; }
 		inline GLSampler GetSampler() const { return Sampler; }
 		inline GLBufferObject &GetPBO() { return *PBO; }
-
-		
 	};
 }

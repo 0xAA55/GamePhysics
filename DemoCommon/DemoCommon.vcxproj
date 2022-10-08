@@ -272,19 +272,25 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AppFrame.hpp" />
-    <ClInclude Include="GLBuffer.hpp" />
+    <ClInclude Include="GLBufferObject.hpp" />
+    <ClInclude Include="GLMesh.hpp" />
     <ClInclude Include="GLRendererBase.hpp" />
     <ClInclude Include="GLShader.hpp" />
-    <ClInclude Include="GLMesh.hpp" />
+    <ClInclude Include="GLStaticMesh.hpp" />
+    <ClInclude Include="GLBufferVector.hpp" />
+    <ClInclude Include="GLBVMesh.hpp" />
     <ClInclude Include="GLRenderer.hpp" />
     <ClInclude Include="GLTexture.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppFrame.cpp" />
-    <ClCompile Include="GLBuffer.cpp" />
+    <ClCompile Include="GLBufferObject.cpp" />
+    <ClCompile Include="GLMesh.cpp" />
     <ClCompile Include="GLRendererBase.cpp" />
     <ClCompile Include="GLShader.cpp" />
-    <ClCompile Include="GLMesh.cpp" />
+    <ClCompile Include="GLStaticMesh.cpp" />
+    <ClCompile Include="GLBufferVector.cpp" />
+    <ClCompile Include="GLBVMesh.cpp" />
     <ClCompile Include="GLRenderer.cpp" />
     <ClCompile Include="GLTexture.cpp" />
   </ItemGroup>

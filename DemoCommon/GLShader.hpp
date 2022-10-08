@@ -5,7 +5,7 @@
 #include<functional>
 #include<type_traits>
 #include<unordered_map>
-#include<GLBuffer.hpp>
+#include<GLBufferObject.hpp>
 #include<GLRendererBase.hpp>
 namespace GLRenderer
 {
