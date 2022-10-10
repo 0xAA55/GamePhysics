@@ -2,7 +2,7 @@
 #include<GLRendererBase.hpp>
 #include<unordered_map>
 #include<GLBufferVector.hpp>
-#include<GLMesh.hpp>
+#include<GLMeshVAO.hpp>
 #include<type_traits>
 namespace GLRenderer
 {
@@ -44,8 +44,9 @@ namespace GLRenderer
 					for (auto &it : VertexBufferFormat)
 					{
 						if (it.Offset == -1) it.Offset = LastOffset;
+						if (it.Stride == -1) it.Stride = sizeof(VertexType);
 						LastOffset = it.Offset + it.GetSizeBytes();
-						it.Describe(Shader, sizeof(VertexType), 0);
+						it.Describe(Shader, 0);
 					}
 					VertexBuffer.Unbind();
 				}
@@ -56,8 +57,9 @@ namespace GLRenderer
 					for (auto &it : InstanceBufferFormat)
 					{
 						if (it.Offset == -1) it.Offset = LastOffset;
+						if (it.Stride == -1) it.Stride = sizeof(InstanceType);
 						LastOffset = it.Offset + it.GetSizeBytes();
-						it.Describe(Shader, sizeof(InstanceType), 1);
+						it.Describe(Shader, 1);
 					}
 					InstanceBuffer.Unbind();
 				}
@@ -160,8 +162,8 @@ namespace GLRenderer
 	};
 
 	extern template GLBufferVector<WaveFrontObjVertex>;
-	extern template GLBufferVector<DrawCommand>;
 	extern template GLBufferVectorNC<WaveFrontObjVertex>;
+	extern template GLBufferVector<DrawCommand>;
 	extern template GLBufferVectorNC<DrawCommand>;
 
 	template<

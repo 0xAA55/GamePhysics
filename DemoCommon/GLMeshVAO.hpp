@@ -33,6 +33,20 @@ namespace GLRenderer
 	template<> struct TypeOfElement_s<MeshElementType::UnsignedInt> { using Type = GLuint; };
 	template<MeshElementType Type> using TypeOfElement = typename TypeOfElement_s<Type>::Type;
 
+	inline GLsizei GetElementTypeSize(MeshElementType ElementType)
+	{
+		switch (ElementType)
+		{
+		case MeshElementType::UnsignedByte:
+			return 1;
+		case MeshElementType::UnsignedShort:
+			return 2;
+		case MeshElementType::UnsignedInt:
+			return 4;
+		}
+		return 0;
+	}
+
 	class DrawCommand
 	{
 	public:
@@ -64,6 +78,7 @@ namespace GLRenderer
 	};
 
 	using VAOContainer = std::unordered_map<GLShaderProgram, GLVAO, GLShaderProgramHasher>;
+	using AttribDescArray = std::vector<AttribDesc>;
 
 	class AttribDesc
 	{
@@ -71,18 +86,18 @@ namespace GLRenderer
 		std::string Name;
 		AttribTypeEnum Type;
 		VarTypeEnum VarType;
-		GLsizei Offset; // If `Offset` is -1, it means the offset should be calculated automatically.
+		GLsizei Offset;
+		GLsizei Stride;
 		int ColCount; // e.g. vec2, vec3, vec4
 		int RowCount; // e.g. mat4x2, mat4x3, mat4x4
 		int Length;
 		bool AsFloat;
 		bool Normalize;
 
-		AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
-		AttribDesc(std::string Name, std::string Type, GLsizei Offset = -1, bool AsFloat = true, bool Normalize = false);
+		AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset = -1, GLsizei Stride = -1, bool AsFloat = true, bool Normalize = false);
+		AttribDesc(std::string Name, std::string Type, GLsizei Offset = -1, GLsizei Stride = -1, bool AsFloat = true, bool Normalize = false);
 
-		void Describe(const GLShaderProgram& Shader, GLsizei Stride, GLuint AVD) const;
+		void Describe(const GLShaderProgram& Shader, GLuint AVD) const;
 		inline GLsizei GetSizeBytes() const { return GetNumUnits(Type) * GetUnitLength(Type); }
 	};
-
 }

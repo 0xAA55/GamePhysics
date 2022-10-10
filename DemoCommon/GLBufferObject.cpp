@@ -18,14 +18,14 @@ GLBufferObject::GLBufferObject(BufferType Type, size_t Length, BufferUsage Usage
 GLBufferObject::GLBufferObject(BufferType Type, size_t Length, BufferUsage Usage, GLBufferObject &CopyFrom, ptrdiff_t CopyLength) :
 	GLBufferObject(Type, Length, Usage)
 {
-	if (CopyLength == -1) CopyLength = CopyFrom.Length;
-	else CopyLength = min(CopyLength, static_cast<ptrdiff_t>(CopyFrom.Length));
+	if (CopyLength == -1) CopyLength = static_cast<ptrdiff_t>(Length);
+	CopyLength = min(CopyLength, static_cast<ptrdiff_t>(CopyFrom.Length));
 	if (CopyLength)
 	{
 		if (CopyFrom.Type != Type)
 		{
 			Bind(); CopyFrom.Bind();
-			glCopyBufferSubData(static_cast<GLenum>(CopyFrom.Type), static_cast<GLenum>(Type), 0, 0, CopyLength);
+			glCopyBufferSubData(static_cast<GLenum>(CopyFrom.Type), static_cast<GLenum>(Type), 0, 0, static_cast<GLsizeiptr>(CopyLength));
 			Unbind(); CopyFrom.Unbind();
 		}
 		else
@@ -34,7 +34,7 @@ GLBufferObject::GLBufferObject(BufferType Type, size_t Length, BufferUsage Usage
 			GLenum CopyToBuffer = static_cast<GLenum>(BufferType::CopyWriteBuffer);
 			glBindBuffer(CopyFromBuffer, CopyFrom.Object);
 			glBindBuffer(CopyToBuffer, Object);
-			glCopyBufferSubData(CopyFromBuffer, CopyToBuffer, 0, 0, min(Length, static_cast<size_t>(CopyLength)));
+			glCopyBufferSubData(CopyFromBuffer, CopyToBuffer, 0, 0, static_cast<GLsizeiptr>(CopyLength));
 			glBindBuffer(CopyFromBuffer, 0);
 			glBindBuffer(CopyToBuffer, 0);
 		}

@@ -1,4 +1,4 @@
-#include "GLMesh.hpp"
+#include "GLMeshVAO.hpp"
 #include <GL/glew.h>
 using namespace GLRenderer;
 
@@ -45,11 +45,12 @@ void GLVAO::DrawByElements(MeshPrimitiveType PrimitiveType, MeshElementType Elem
 	else glDrawElementsInstanced(PT, ElementCount, ET, nullptr, InstanceCount);
 }
 
-AttribDesc::AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset, bool AsFloat, bool Normalize) :
+AttribDesc::AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset, GLsizei Stride, bool AsFloat, bool Normalize) :
 	Name(Name),
 	Type(Type),
 	VarType(GetVarType(Type)),
 	Offset(Offset),
+	Stride(Stride),
 	ColCount(GetNumCols(Type)),
 	RowCount(GetNumRows(Type)),
 	AsFloat(AsFloat),
@@ -59,18 +60,17 @@ AttribDesc::AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset, bo
 	if (!AsFloat) { AsFloat = (!IsInteger(Type) && !IsDouble(Type)); }
 }
 
-AttribDesc::AttribDesc(std::string Name, std::string Type, GLsizei Offset, bool AsFloat, bool Normalize) :
-	AttribDesc(Name, StringToAttribType(Type), Offset, AsFloat, Normalize)
+AttribDesc::AttribDesc(std::string Name, std::string Type, GLsizei Offset, GLsizei Stride, bool AsFloat, bool Normalize) :
+	AttribDesc(Name, StringToAttribType(Type), Offset, Stride, AsFloat, Normalize)
 {
 }
 
-void AttribDesc::Describe(const GLShaderProgram& Shader, GLsizei Stride, GLuint AVD) const
+void AttribDesc::Describe(const GLShaderProgram& Shader, GLuint AVD) const
 {
 	GLint Location = GLVertexAttribLocation(Name);
 	if (Location < 0) return;
 	GLsizei CurOffset = Offset;
 	GLsizei RowSize = GetUnitLength(VarType) * ColCount;
-	if (Offset == -1) throw std::invalid_argument("From AttribDesc::Describe(): `Offset` is -1, which means that the offset should be automatically calculated.");
 	for (GLint i = 0; i < RowCount; i++)
 	{
 		const void* PtrParam = reinterpret_cast<const void*>(static_cast<size_t>(CurOffset));
