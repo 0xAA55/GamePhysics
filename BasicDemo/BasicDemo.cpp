@@ -140,9 +140,9 @@ public:
 
 	void OnRender(double Time, int ClientWidth, int ClientHeight) override
 	{
-		Renderer::SetViewport(0, 0, ClientWidth, ClientHeight);
-		Renderer::ClearScreen(0, 0, 0, 0);
-		Renderer::SetDepthMode(true);
+		RenderUtility::SetViewport(0, 0, ClientWidth, ClientHeight);
+		RenderUtility::ClearScreen(0, 0, 0, 0);
+		RenderUtility::SetDepthMode(true);
 
 		CameraPos = vec3(0, 1, 5);
 		CamYawPitchRoll = vec3(0, 0, 0);
@@ -151,10 +151,10 @@ public:
 		GLfloat PX = PZ * ClientWidth * 2.0f / (ClientWidth + ClientHeight);
 		GLfloat PY = PZ * ClientHeight * 2.0f / (ClientWidth + ClientHeight);
 
-		mat4 MatView = Renderer::GetViewMatrix(CamYawPitchRoll, CameraPos);
-		mat4 MatProjection = Renderer::Perspective(-PX, PX, -PY, PY, PZ, 10000.0f);
+		mat4 MatView = RenderUtility::GetViewMatrix(CamYawPitchRoll, CameraPos);
+		mat4 MatProjection = RenderUtility::Perspective(-PX, PX, -PY, PY, PZ, 10000.0f);
 		mat4 MatProjectionView = MatProjection * MatView;
-		mat4 MatItem = Renderer::Mat4RotEuler((float)Time, 0.0f, 0.0f);
+		mat4 MatItem = RenderUtility::Mat4RotEuler((float)Time, 0.0f, 0.0f);
 
 		BoxMesh.InstanceBuffer[0] = MatItem;
 
