@@ -4,6 +4,7 @@
 #include<GLBufferVector.hpp>
 #include<GLMeshVAO.hpp>
 #include<type_traits>
+#include<ObjMeshLoader.hpp>
 namespace GLRenderer
 {
 	template<
@@ -154,15 +155,8 @@ namespace GLRenderer
 		}
 	};
 
-	class WaveFrontObjVertex
-	{
-		vec3 Position;
-		vec3 Normal;
-		vec2 TexCoord;
-	};
-
-	extern template GLBufferVector<WaveFrontObjVertex>;
-	extern template GLBufferVectorNC<WaveFrontObjVertex>;
+	extern template GLBufferVector<GeneralObjVertexType>;
+	extern template GLBufferVectorNC<GeneralObjVertexType>;
 	extern template GLBufferVector<DrawCommand>;
 	extern template GLBufferVectorNC<DrawCommand>;
 
@@ -173,7 +167,7 @@ namespace GLRenderer
 		bool IndexBufferUseCachedBuffer = false,
 		bool InstanceBufferUseCachedBuffer = false,
 		bool CommandBufferUseCachedBuffer = false>
-	using GLBVMesh_Obj = GLBVMesh<WaveFrontObjVertex,
+	using GLBVMesh_Obj = GLBVMesh< GeneralObjVertexType,
 		InstanceType,
 		ElementType,
 		VertexBufferUseCachedBuffer,

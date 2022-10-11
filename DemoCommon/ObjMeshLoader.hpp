@@ -12,6 +12,9 @@ namespace GLRenderer
 			ptr(pointer),
 			len(length)
 		{}
+		vec2 ToVec2();
+		vec3 ToVec3();
+		vec4 ToVec4();
 	};
 
 	struct ObjVertData
@@ -65,6 +68,8 @@ namespace GLRenderer
 		std::string DisplacementTexture; // disp
 		std::string DecalTexture; // decal
 		std::map<std::string, std::string> RawData;
+
+		ObjMaterialData();
 	};
 
 	using ObjFloatDataArray = std::vector<float>;
@@ -73,6 +78,25 @@ namespace GLRenderer
 	using ObjLineDataArray = std::vector<ObjLineData>;
 	using ObjVectorDataArray = std::vector<ObjVectorData>;
 	using ObjVertDataArray = std::vector<ObjVertData>;
+
+	struct GeneralObjVertexType
+	{
+		vec3 Position;
+		vec3 Normal;
+		vec2 TexCoord;
+		inline GeneralObjVertexType() :
+			Position(vec3(0, 0, 0)),
+			Normal(vec3(0, 0, 0)),
+			TexCoord(vec2(0, 0))
+		{}
+		inline GeneralObjVertexType(vec3 P, vec3 N, vec2 T) :
+			Position(P),
+			Normal(N),
+			TexCoord(T)
+		{}
+	};
+
+	using GeneralObjVertexArrayType = std::vector<GeneralObjVertexType>;
 
 	class ObjMeshSubset
 	{
@@ -84,6 +108,17 @@ namespace GLRenderer
 		ObjVectorDataArray VertNormal;
 		ObjFaceDataArray Faces;
 		ObjLineDataArray Lines;
+
+		void ConvertToGeneralObjVertices(GeneralObjVertexArrayType& VertOut, ObjUIntDataArray& IndexOut);
+	};
+
+	class GeneralObjVertices
+	{
+	public:
+		GeneralObjVertexArrayType Vertices;
+		ObjUIntDataArray Indices;
+
+		static void OnMeshSubset(void* cb_userdata, ObjMeshSubset& subset);
 	};
 
 	typedef void(*OnMeshSubset)(void* cb_userdata, ObjMeshSubset& subset);

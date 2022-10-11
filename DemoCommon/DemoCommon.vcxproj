@@ -281,7 +281,7 @@
     <ClInclude Include="GLBufferObject.hpp" />
     <ClInclude Include="GLMeshVAO.hpp" />
     <ClInclude Include="GLRendererBase.hpp" />
-    <ClInclude Include="GLSceneObject.hpp" />
+    <ClInclude Include="SceneObject.hpp" />
     <ClInclude Include="GLShader.hpp" />
     <ClInclude Include="GLStaticMesh.hpp" />
     <ClInclude Include="GLBufferVector.hpp" />
@@ -290,13 +290,14 @@
     <ClInclude Include="GLTexture.hpp" />
     <ClInclude Include="GLRenderUtility.hpp" />
     <ClInclude Include="ObjMeshLoader.hpp" />
+    <ClInclude Include="SceneManager.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppFrame.cpp" />
     <ClCompile Include="GLBufferObject.cpp" />
     <ClCompile Include="GLMeshVAO.cpp" />
     <ClCompile Include="GLRendererBase.cpp" />
-    <ClCompile Include="GLSceneObject.cpp" />
+    <ClCompile Include="SceneObject.cpp" />
     <ClCompile Include="GLShader.cpp" />
     <ClCompile Include="GLStaticMesh.cpp" />
     <ClCompile Include="GLBufferVector.cpp" />
@@ -305,6 +306,7 @@
     <ClCompile Include="GLTexture.cpp" />
     <ClCompile Include="GLRenderUtility.cpp" />
     <ClCompile Include="ObjMeshLoader.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

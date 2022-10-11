@@ -1,8 +1,9 @@
 #pragma once
 #include<GLRendererBase.hpp>
 #include<GLMeshVAO.hpp>
-#include<unordered_map>
+#include<memory>
 #include<vector>
+#include<unordered_map>
 namespace GLRenderer
 {
 	class GLStaticMesh
@@ -11,10 +12,10 @@ namespace GLRenderer
 		VAOContainer VAOsForEachShader;
 
 	public:
-		GLBufferOwnership ArrayBuffer;
-		GLBufferOwnership IndexBuffer;
-		GLBufferOwnership InstanceBuffer;
-		GLBufferOwnership CommandBuffer;
+		std::shared_ptr<GLBufferObject> ArrayBuffer;
+		std::shared_ptr<GLBufferObject> IndexBuffer;
+		std::shared_ptr<GLBufferObject> InstanceBuffer;
+		std::shared_ptr<GLBufferObject> CommandBuffer;
 		AttribDescArray ArrayBufferFormat;
 		AttribDescArray InstanceBufferFormat;
 		MeshPrimitiveType PrimitiveType;
@@ -35,10 +36,14 @@ namespace GLRenderer
 		}
 
 	protected:
+		GLBufferObject* DescribedArrayBuffer;
+		GLBufferObject* DescribedInstanceBuffer;
 		GLVAO& Describe(const GLShaderProgram& Shader);
 
 	public:
 		GLStaticMesh();
+		GLStaticMesh(GLStaticMesh& CreateFrom);
+		GLStaticMesh(const GLStaticMesh& CopyFrom);
 
 		void CreateArrayBuffer(size_t Size);
 		void CreateIndexBuffer(MeshElementType ElementType, size_t Size);

@@ -18,6 +18,38 @@ struct ObjVectorDataIndex
 
 using ObjVectorDataIndexArray = vector<ObjVectorDataIndex>;
 
+vec2 ObjVectorData::ToVec2()
+{
+	float ret[2] = { 0, 0 };
+	for (int i = 0; i < 2 && i < len; i++) ret[i] = ptr[i];
+	return vec2(ret[0], ret[1]);
+}
+
+vec3 ObjVectorData::ToVec3()
+{
+	float ret[3] = { 0, 0, 0 };
+	for (int i = 0; i < 3 && i < len; i++) ret[i] = ptr[i];
+	return vec3(ret[0], ret[1], ret[2]);
+}
+
+vec4 ObjVectorData::ToVec4()
+{
+	float ret[4] = { 0, 0, 0, 0 };
+	for (int i = 0; i < 4 && i < len; i++) ret[i] = ptr[i];
+	return vec4(ret[0], ret[1], ret[2], ret[3]);
+}
+
+
+ObjMaterialData::ObjMaterialData() :
+	Ambient(vec3(0, 0, 0)),
+	Diffuse(vec3(0, 0, 0)),
+	Specular(vec3(0, 0, 0)),
+	SpecularExp(0),
+	Alpha(0),
+	TransmissionFilter(vec3(0, 0, 0)),
+	RefractionIndex(0)
+{}
+
 class ObjFileLoader
 {
 public:
@@ -107,7 +139,7 @@ public:
 		return ret;
 	}
 
-	void FinishSubset(char* NewSubsetName)
+	void FinishSubset(const char* NewSubsetName)
 	{
 		if (!ParsingSubset)
 		{
@@ -126,7 +158,7 @@ public:
 		SubsetLineIndices.clear();
 	}
 
-	void FinishMaterial(char* NewMaterialName)
+	void FinishMaterial(const char* NewMaterialName)
 	{
 		Materials[ParsingMaterialName] = ParsingMaterial;
 		ParsingMaterialName = NewMaterialName;
@@ -220,11 +252,11 @@ public:
 
 static ObjFloatDataArray ParseFloats(char*& ch)
 {
-	float f;
+	double d;
 	ObjFloatDataArray ret;
-	while (sscanf(ch, "%f", &f) == 1)
+	while (sscanf(ch, "%lf", &d) == 1)
 	{
-		ret.push_back(f);
+		ret.push_back(static_cast<float>(d));
 		ch = strchr(ch, ' ');
 		if (!ch) break;
 		skip_spaces(ch);
@@ -461,11 +493,60 @@ static void OnObjLine(void* userdata, char* ch)
 	else if (check_begin(ch, "mtllib "))
 	{
 		ReadTextFile(ch, userdata, OnMtlLine);
+		objf.FinishMaterial("");
 	}
 	else
 	{
 		fprintf(stderr, "Unknown OBJ line: %s\n", ch);
 	}
+}
+
+static bool operator < (const ObjVertData& v1, const ObjVertData& v2)
+{
+	return v1.Pos < v2.Pos || v1.Tex < v2.Tex || v1.Normal < v2.Normal;
+}
+
+void ObjMeshSubset::ConvertToGeneralObjVertices(GeneralObjVertexArrayType& VertOut, ObjUIntDataArray& IndexOut)
+{
+	//map<ObjVertData, uint32_t> VertMap;
+	for (auto& f : Faces)
+	{
+		uint32_t P0 = 0, P1 = 0;
+		for (int i = 0; i < f.len; i++)
+		{
+			auto& VPTNi = f.ptr[i];
+			uint32_t VertIndex = 0;// VertMap[VPTNi];
+			if (!VertIndex)
+			{
+				GeneralObjVertexType NewVert;
+				if (VPTNi.Pos) NewVert.Position =  VertPos[static_cast<size_t>(VPTNi.Pos) - 1].ToVec3();
+				if (VPTNi.Tex) NewVert.TexCoord =  VertTex[static_cast<size_t>(VPTNi.Tex) - 1].ToVec2();
+				if (VPTNi.Normal) NewVert.Normal = VertTex[static_cast<size_t>(VPTNi.Normal) - 1].ToVec3();
+				VertOut.push_back(NewVert);
+				VertIndex = static_cast<uint32_t>(VertOut.size());
+				// VertMap[VPTNi] = VertIndex;
+			}
+			VertIndex -= 1;
+			if (i > 2)
+			{
+				IndexOut.push_back(P0);
+				IndexOut.push_back(P1);
+				IndexOut.push_back(VertIndex);
+			}
+			else
+			{
+				IndexOut.push_back(VertIndex);
+			}
+			P0 = P1;
+			P1 = VertIndex;
+		}
+	}
+}
+
+void GeneralObjVertices::OnMeshSubset(void* cb_userdata, ObjMeshSubset& subset)
+{
+	auto &self = *static_cast<GeneralObjVertices*>(cb_userdata);
+	subset.ConvertToGeneralObjVertices(self.Vertices, self.Indices);
 }
 
 bool GLRenderer::LoadObjFile(const char* path, OnMeshSubset CB, void* cb_userdata)
@@ -475,6 +556,7 @@ bool GLRenderer::LoadObjFile(const char* path, OnMeshSubset CB, void* cb_userdat
 	ObjLoader->CBUserData = cb_userdata;
 	ObjLoader->OnSubsetCB = CB;
 	if (!ReadTextFile(path, ObjLoader, OnObjLine)) goto FailExit;
+	ObjLoader->FinishSubset("");
 
 	delete ObjLoader;
 	return true;

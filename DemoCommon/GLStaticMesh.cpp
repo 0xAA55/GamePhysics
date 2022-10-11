@@ -9,7 +9,7 @@ GLStaticMesh::GLStaticMesh() :
 
 GLVAO& GLStaticMesh::Describe(const GLShaderProgram& Shader)
 {
-	bool ShouldDescribe = ArrayBuffer.ObjectChanged || CommandBuffer.ObjectChanged;
+	bool ShouldDescribe = ArrayBuffer.get() != DescribedArrayBuffer || InstanceBuffer.get() != DescribedInstanceBuffer;
 	GLVAO& VAO = VAOsForEachShader[Shader];
 	if (!VAO.IsDescribed()) ShouldDescribe = true;
 	VAO.Bind();
@@ -26,6 +26,7 @@ GLVAO& GLStaticMesh::Describe(const GLShaderProgram& Shader)
 				it.Describe(Shader, 0);
 			}
 			ArrayBuffer->Unbind();
+			DescribedArrayBuffer = ArrayBuffer.get();
 		}
 		if (InstanceBuffer && InstanceBufferFormat.size())
 		{
@@ -38,6 +39,7 @@ GLVAO& GLStaticMesh::Describe(const GLShaderProgram& Shader)
 				it.Describe(Shader, 1);
 			}
 			InstanceBuffer->Unbind();
+			DescribedInstanceBuffer = InstanceBuffer.get();
 		}
 		VAO.SetDescribed();
 	}
@@ -46,40 +48,40 @@ GLVAO& GLStaticMesh::Describe(const GLShaderProgram& Shader)
 
 void GLStaticMesh::CreateArrayBuffer(size_t Size)
 {
-	if (Size) ArrayBuffer = new GLBufferObject(BufferType::ArrayBuffer, Size, BufferUsage::StaticDraw);
-	else ArrayBuffer.Discard();
+	if (Size) ArrayBuffer = std::make_shared<GLBufferObject>(BufferType::ArrayBuffer, Size, BufferUsage::StaticDraw);
+	else ArrayBuffer.reset();
 }
 
 void GLStaticMesh::CreateIndexBuffer(MeshElementType ElementType, size_t Size)
 {
-	if (Size) IndexBuffer = new GLBufferObject(BufferType::ElementArrayBuffer, Size, BufferUsage::StaticDraw);
-	else IndexBuffer.Discard();
+	if (Size) IndexBuffer = std::make_shared<GLBufferObject>(BufferType::ElementArrayBuffer, Size, BufferUsage::StaticDraw);
+	else IndexBuffer.reset();
 	IndexBufferElementType = ElementType;
 }
 
 void GLStaticMesh::CreateInstanceBuffer(size_t Size, size_t DrawInstanceCount)
 {
-	if (Size) InstanceBuffer = new GLBufferObject(BufferType::ArrayBuffer, Size, BufferUsage::DynamicDraw);
-	else InstanceBuffer.Discard();
+	if (Size) InstanceBuffer = std::make_shared<GLBufferObject>(BufferType::ArrayBuffer, Size, BufferUsage::DynamicDraw);
+	else InstanceBuffer.reset();
 	InstanceCount = DrawInstanceCount;
 }
 
 void GLStaticMesh::CreateCommandBuffer(size_t Count)
 {
-	if (Count) CommandBuffer = new GLBufferObject(BufferType::DrawIndirectBuffer, Count * sizeof(DrawCommand), BufferUsage::DynamicDraw);
-	else CommandBuffer.Discard();
+	if (Count) CommandBuffer = std::make_shared<GLBufferObject>(BufferType::DrawIndirectBuffer, Count * sizeof(DrawCommand), BufferUsage::DynamicDraw);
+	else CommandBuffer.reset();
 }
 
 void GLStaticMesh::SetArrayBufferSize(size_t Size)
 {
-	if (ArrayBuffer && Size) ArrayBuffer = new GLBufferObject(*ArrayBuffer, Size, -1);
+	if (ArrayBuffer && Size) ArrayBuffer = std::make_shared<GLBufferObject>(*ArrayBuffer, Size, -1);
 	else
 		CreateArrayBuffer(Size);
 }
 
 void GLStaticMesh::SetIndexBufferSize(size_t Size)
 {
-	if (IndexBuffer) IndexBuffer = new GLBufferObject(*IndexBuffer, Size, -1);
+	if (IndexBuffer) IndexBuffer = std::make_shared<GLBufferObject>(*IndexBuffer, Size, -1);
 	else CreateIndexBuffer(IndexBufferElementType, Size);
 }
 
@@ -87,7 +89,7 @@ void GLStaticMesh::SetInstanceBufferSize(size_t Size, size_t DrawInstanceCount)
 {
 	if (InstanceBuffer)
 	{
-		InstanceBuffer = new GLBufferObject(*InstanceBuffer, Size, -1);
+		InstanceBuffer = std::make_shared<GLBufferObject>(*InstanceBuffer, Size, -1);
 		InstanceCount = DrawInstanceCount;
 	}
 	else CreateInstanceBuffer(Size, DrawInstanceCount);
@@ -95,7 +97,7 @@ void GLStaticMesh::SetInstanceBufferSize(size_t Size, size_t DrawInstanceCount)
 
 void GLStaticMesh::SetCommandBufferCount(size_t Count)
 {
-	if (CommandBuffer) CommandBuffer = new GLBufferObject(*CommandBuffer, Count * sizeof(DrawCommand), -1);
+	if (CommandBuffer) CommandBuffer = std::make_shared<GLBufferObject>(*CommandBuffer, Count * sizeof(DrawCommand), -1);
 	else CreateCommandBuffer(Count);
 }
 

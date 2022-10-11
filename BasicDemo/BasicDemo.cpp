@@ -39,6 +39,7 @@ public:
 	double LastUpdateTime;
 	GLShaderProgram BoxShader;
 	GLBVMesh<Vertex3D, mat4, MeshElementType::UnsignedByte> BoxMesh;
+	GLBVMesh<GeneralObjVertexType, mat4, MeshElementType::UnsignedInt> ObjMesh;
 	vec3 CameraPos;
 	vec3 CamYawPitchRoll;
 
@@ -70,6 +71,7 @@ public:
 ""
 		),
 		BoxMesh(MeshPrimitiveType::Triangles),
+		ObjMesh(MeshPrimitiveType::Triangles),
 		CameraPos(0, 0, -5),
 		CamYawPitchRoll(0, 0, 0)
 	{
@@ -96,6 +98,11 @@ public:
 		{
 			std::cout << UniformTypeToString(it.Type) << " " << it.Name << "; // " << it.Size << std::endl;
 		}
+
+		ObjMesh.VertexBufferFormat.push_back(AttribDesc("Position", AttribTypeEnum::Vec3));
+		ObjMesh.VertexBufferFormat.push_back(AttribDesc("Normal", AttribTypeEnum::Vec3));
+		ObjMesh.VertexBufferFormat.push_back(AttribDesc("TexCoord", AttribTypeEnum::Vec2));
+		ObjMesh.InstanceBufferFormat.push_back(AttribDesc("Transform", AttribTypeEnum::Mat4));
 	}
 
 	void OnLoadResources() noexcept(false) override
@@ -129,6 +136,24 @@ public:
 			vec4(0, 1, 0, 0),
 			vec4(0, 0, 1, 0),
 			vec4(0, 0, 0, 1)));
+
+		GeneralObjVertices ov;
+		LoadObjFile("test.obj", GeneralObjVertices::OnMeshSubset, &ov);
+
+		for (auto& it : ov.Vertices)
+		{
+			ObjMesh.VertexBuffer.PushBack(it);
+		}
+		for (auto& it : ov.Indices)
+		{
+			ObjMesh.IndexBuffer.PushBack(it);
+		}
+
+		ObjMesh.InstanceBuffer.PushBack(mat4(
+			vec4(1, 0, 0, 0),
+			vec4(0, 1, 0, 0),
+			vec4(0, 0, 1, 0),
+			vec4(0, 0, 0, 1)));
 	}
 	
 	void OnUnLoadResources() noexcept(false)override
@@ -136,6 +161,9 @@ public:
 		BoxMesh.VertexBuffer.Clear();
 		BoxMesh.IndexBuffer.Clear();
 		BoxMesh.InstanceBuffer.Clear();
+		ObjMesh.VertexBuffer.Clear();
+		ObjMesh.IndexBuffer.Clear();
+		ObjMesh.InstanceBuffer.Clear();
 	}
 
 	void OnRender(double Time, int ClientWidth, int ClientHeight) override
@@ -158,12 +186,16 @@ public:
 
 		BoxMesh.InstanceBuffer[0] = MatItem;
 
+		MatItem = RenderUtility::Mat4RotEuler((float)Time, 0.0f, 0.0f);
+		ObjMesh.InstanceBuffer[0] = MatItem;
+
 		BoxShader.Use();
 		BoxShader.SetUniform("View", MatView);
 		BoxShader.SetUniform("Projection", MatProjection);
 		BoxShader.SetUniform("ProjectionView", MatProjectionView);
 
 		BoxMesh.Draw(BoxShader);
+		ObjMesh.Draw(BoxShader);
 		SwapBuffers();
 	}
 

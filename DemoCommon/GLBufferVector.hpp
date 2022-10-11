@@ -1,5 +1,6 @@
 #pragma once
 #include<GLBufferObject.hpp>
+#include<memory>
 namespace GLRenderer
 {
 	class BufferCastingError : public std::runtime_error
@@ -31,11 +32,13 @@ namespace GLRenderer
 		using DifferenceType = typename VectorType::difference_type;
 		using Iterator = GLBufferIterator<T>;
 		using ConstIterator = GLBufferConstIterator<T>;
+		friend class VectorWithoutCache;
 
 	protected:
 		BufferUsage Usage;
 
-		GLBufferOwnership BufferObject;
+		std::shared_ptr<GLBufferObject> BufferObject;
+		GLBufferObject* BufferObjectPrev;
 		VectorType Contents;
 
 		BoolVecType Updated;
@@ -61,6 +64,7 @@ namespace GLRenderer
 			Type(Type),
 			Usage(Usage),
 			BufferObject(nullptr),
+			BufferObjectPrev(nullptr),
 			Contents(),
 			Updated(),
 			Updated_MinIndex(-1),
@@ -72,7 +76,8 @@ namespace GLRenderer
 		GLBufferVector(const GLBufferVector& CopyFrom) :
 			Type(CopyFrom.Type),
 			Usage(CopyFrom.Usage),
-			BufferObject(CopyFrom.BufferObject),
+			BufferObject(std::make_shared<GLBufferObject>(*CopyFrom.BufferObject)),
+			BufferObjectPrev(nullptr),
 			Contents(CopyFrom.Contents),
 			Updated(CopyFrom.Updated),
 			Updated_MinIndex(CopyFrom.Updated_MinIndex),
@@ -85,6 +90,7 @@ namespace GLRenderer
 			Type(Type),
 			Usage(Usage),
 			BufferObject(nullptr),
+			BufferObjectPrev(nullptr),
 			Contents(Data),
 			Updated(),
 			Updated_MinIndex(0),
@@ -101,6 +107,7 @@ namespace GLRenderer
 			Usage = CopyFrom.Usage;
 
 			BufferObject = CopyFrom.BufferObject;
+			BufferObjectPrev = nullptr,
 			Contents = CopyFrom.Contents;
 
 			Updated = CopyFrom.Updated;
@@ -154,21 +161,21 @@ namespace GLRenderer
 		{
 			Contents.resize(Count);
 			Updated.resize(Count, true);
-			BufferObject = new GLBufferObject(*BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
+			BufferObject = std::make_shared<GLBufferObject>(*BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
 		}
 
 		inline void Resize(SizeType Count, const T& Value)
 		{
 			Contents.resize(Count, Value);
 			Updated.resize(Count, true);
-			BufferObject = new GLBufferObject(*BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
+			BufferObject = std::make_shared<GLBufferObject>(*BufferObject, Capacity() * sizeof(T), Count * sizeof(T));
 		}
 
 		inline void Reserve(SizeType NewCapacity)
 		{
 			Contents.reserve(NewCapacity);
 			Updated.reserve(NewCapacity);
-			BufferObject = new GLBufferObject(*BufferObject, Capacity() * sizeof(T), Size() * sizeof(T));
+			BufferObject = std::make_shared<GLBufferObject>(*BufferObject, Capacity() * sizeof(T), Size() * sizeof(T));
 		}
 
 		inline void Clear()
@@ -183,11 +190,11 @@ namespace GLRenderer
 			Updated.shrink_to_fit();
 			SizeType SizeBytes = Size() * sizeof(T);
 			SizeType CapacityBytes = Capacity() * sizeof(T);
-			if (!BufferObject.Empty())
+			if (BufferObject)
 			{
 				if (BufferObject->GetLength() != CapacityBytes)
 				{
-					BufferObject = new GLBufferObject(*BufferObject, SizeBytes);
+					BufferObject = std::make_shared<GLBufferObject>(*BufferObject, SizeBytes);
 					Flushed = false;
 				}
 			}
@@ -223,23 +230,24 @@ namespace GLRenderer
 
 		inline void WatchForObjectChanged() noexcept
 		{
-			BufferObject.ObjectChanged = false;
+			BufferObjectPrev = BufferObject.get();
 		}
 
 		inline bool CheckObjectChanged() const
 		{
-			return BufferObject.ObjectChanged;
+			return BufferObjectPrev != BufferObject.get();
 		}
 
 		inline void Bind()
 		{
 			Flush();
-			if (!BufferObject.Empty()) BufferObject->Bind();
+			if (BufferObject) BufferObject->Bind();
+			BufferObjectPrev = BufferObject.get();
 		}
 
 		inline void Unbind()
 		{
-			if (!BufferObject.Empty()) BufferObject->Unbind();
+			if (BufferObject) BufferObject->Unbind();
 		}
 
 		inline T operator [] (SizeType index) const
@@ -263,16 +271,15 @@ namespace GLRenderer
 			if (Flushed) return;
 			if (!Size())
 			{
-				BufferObject.Discard();
 				return;
 			}
 			SizeType SizeBytes = Size() * sizeof(T);
 			SizeType CapacityBytes = Capacity() * sizeof(T);
-			if (!BufferObject.Empty())
+			if (BufferObject)
 			{
 				if (BufferObject->GetLength() != CapacityBytes)
 				{
-					BufferObject = new GLBufferObject(*BufferObject, SizeBytes);
+					BufferObject = std::make_shared<GLBufferObject>(*BufferObject, SizeBytes);
 				}
 				Updated_MinIndex = max(Updated_MinIndex, static_cast<DifferenceType>(0));
 				Updated_MaxIndex = min(Updated_MaxIndex, static_cast<DifferenceType>(Size()));
@@ -322,19 +329,13 @@ namespace GLRenderer
 			}
 			else
 			{
-				BufferObject = new GLBufferObject(Type, CapacityBytes, Usage);
+				BufferObject = std::make_shared<GLBufferObject>(Type, CapacityBytes, Usage);
 				BufferObject->Bind();
 				BufferObject->SetData(Contents.data());
 				BufferObject->Unbind();
 				SetFlushed();
 				return;
 			}
-		}
-
-		GLBufferObject* GetBufferObject()
-		{
-			Flush();
-			return BufferObject.Get();
 		}
 
 		template<typename T2> GLBufferVector<T2> ReinterpretCast(BufferType Type, BufferUsage Usage) const
@@ -432,11 +433,13 @@ namespace GLRenderer
 		using VectorWithCache = GLBufferVector<T>;
 		using SizeType = typename VectorWithCache::SizeType;
 		using DifferenceType = typename VectorWithCache::DifferenceType;
+		friend class VectorWithCache;
 
 	protected:
 		BufferUsage Usage;
 
-		GLBufferOwnership BufferObject;
+		std::shared_ptr<GLBufferObject> BufferObject;
+		GLBufferObject* BufferObjectPrev;
 		SizeType ItemCount;
 		SizeType ItemCapacity;
 
@@ -449,7 +452,8 @@ namespace GLRenderer
 			Usage(Usage),
 			ItemCount(0),
 			ItemCapacity(InitCapacity),
-			BufferObject(new GLBufferObject(Type, InitCapacity * sizeof(T), Usage))
+			BufferObject(std::make_shared<GLBufferObject>(Type, InitCapacity * sizeof(T), Usage)),
+			BufferObjectPrev(nullptr)
 		{
 		}
 		GLBufferVectorNC(BufferType Type, BufferUsage Usage, const std::vector<T>& Data) :
@@ -457,7 +461,8 @@ namespace GLRenderer
 			Usage(Usage),
 			ItemCount(Data.size()),
 			ItemCapacity(Data.capacity()),
-			BufferObject(new GLBufferObject(Type, Data.capacity() * sizeof(T), Usage))
+			BufferObject(std::make_shared<GLBufferObject>(Type, Data.capacity() * sizeof(T), Usage)),
+			BufferObjectPrev(nullptr)
 		{
 			BufferObject->Bind();
 			BufferObject->SetData(0, ItemCount * sizeof(T), Data.data());
@@ -467,7 +472,8 @@ namespace GLRenderer
 			Usage(From.Usage),
 			ItemCount(From.Size()),
 			ItemCapacity(From.Capacity()),
-			BufferObject(new GLBufferObject(From.Type, From.Capacity() * sizeof(T), From.Usage, *From.BufferObject))
+			BufferObject(std::make_shared<GLBufferObject>(From.Type, From.Capacity() * sizeof(T), From.Usage, *From.BufferObject)),
+			BufferObjectPrev(nullptr)
 		{
 		}
 		GLBufferVectorNC(VectorWithCache& From) :
@@ -476,7 +482,8 @@ namespace GLRenderer
 			ItemCount(From.Size()),
 			ItemCapacity(From.Capacity())
 		{
-			BufferObject = new GLBufferObject(From.Type, From.Capacity() * sizeof(T), From.GetUsage(), *From.GetBufferObject());
+			BufferObject = From.BufferObject;
+			BufferObjectPrev = nullptr;
 		}
 
 		inline SizeType Size() const noexcept
@@ -511,7 +518,7 @@ namespace GLRenderer
 		inline void Reserve(SizeType NewCapacity)
 		{
 			if (NewCapacity <= ItemCapacity) return;
-			BufferObject = new GLBufferObject(*BufferObject, NewCapacity * sizeof(T), ItemCount * sizeof(T));
+			BufferObject = std::make_shared<GLBufferObject>(*BufferObject, NewCapacity * sizeof(T), ItemCount * sizeof(T));
 			ItemCapacity = NewCapacity;
 		}
 
@@ -544,7 +551,7 @@ namespace GLRenderer
 			if (ItemCapacity > ItemCount)
 			{
 				ItemCapacity = ItemCount;
-				BufferObject = new GLBufferObject(*BufferObject, ItemCount * sizeof(T));
+				BufferObject = std::make_shared<GLBufferObject>(*BufferObject, ItemCount * sizeof(T));
 			}
 		}
 
@@ -578,17 +585,18 @@ namespace GLRenderer
 
 		inline void WatchForObjectChanged() noexcept
 		{
-			BufferObject.ObjectChanged = false;
+			BufferObjectPrev = BufferObject.get();
 		}
 
 		inline bool CheckObjectChanged() const
 		{
-			return BufferObject.ObjectChanged;
+			return BufferObjectPrev != BufferObject.get();
 		}
 
 		inline void Bind()
 		{
 			BufferObject->Bind();
+			BufferObjectPrev = BufferObject.get();
 		}
 
 		inline void Unbind()
@@ -608,11 +616,6 @@ namespace GLRenderer
 
 		inline void Flush()
 		{
-		}
-
-		GLBufferObject* GetBufferObject()
-		{
-			return BufferObject.Get();
 		}
 
 		// returns actual copied data size
