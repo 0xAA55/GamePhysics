@@ -1,5 +1,5 @@
 #include "ObjMeshLoader.hpp"
-#include<map>
+#include<unordered_map>
 #include<string>
 #include<cstdio>
 #include<cctype>
@@ -501,21 +501,28 @@ static void OnObjLine(void* userdata, char* ch)
 	}
 }
 
-static bool operator < (const ObjVertData& v1, const ObjVertData& v2)
+template<> struct less<ObjVertData>
 {
-	return v1.Pos < v2.Pos || v1.Tex < v2.Tex || v1.Normal < v2.Normal;
-}
+	bool operator() (const ObjVertData& v1, const ObjVertData& v2) const
+	{
+		if (v1.Pos > v2.Pos) return false;
+		if (v1.Pos < v2.Pos) return true;
+		if (v1.Tex > v2.Tex) return false;
+		if (v1.Tex < v2.Tex) return true;
+		return v1.Normal < v2.Normal;
+	}
+};
 
 void ObjMeshSubset::ConvertToGeneralObjVertices(GeneralObjVertexArrayType& VertOut, ObjUIntDataArray& IndexOut)
 {
-	//map<ObjVertData, uint32_t> VertMap;
+	map<ObjVertData, uint32_t> VertMap;
 	for (auto& f : Faces)
 	{
 		uint32_t P0 = 0, P1 = 0;
 		for (int i = 0; i < f.len; i++)
 		{
-			auto& VPTNi = f.ptr[i];
-			uint32_t VertIndex = 0;// VertMap[VPTNi];
+			auto VPTNi = f.ptr[i];
+			uint32_t VertIndex = VertMap[VPTNi];
 			if (!VertIndex)
 			{
 				GeneralObjVertexType NewVert;
@@ -524,7 +531,7 @@ void ObjMeshSubset::ConvertToGeneralObjVertices(GeneralObjVertexArrayType& VertO
 				if (VPTNi.Normal) NewVert.Normal = VertTex[static_cast<size_t>(VPTNi.Normal) - 1].ToVec3();
 				VertOut.push_back(NewVert);
 				VertIndex = static_cast<uint32_t>(VertOut.size());
-				// VertMap[VPTNi] = VertIndex;
+				VertMap[VPTNi] = VertIndex;
 			}
 			VertIndex -= 1;
 			if (i > 2)
