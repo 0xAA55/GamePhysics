@@ -1,5 +1,5 @@
 #include<AppFrame.hpp>
-#include<GLRenderer.hpp>
+#include<GLRenderUtility.hpp>
 #include<GamePhysics.hpp>
 #include<iostream>
 #include<GLBVMesh.hpp>
@@ -35,7 +35,7 @@ struct Vertex3D
 class BasicDemo : public AppFrame
 {
 public:
-	GPWorld World;
+	GPWorld PhysicsWorld;
 	double LastUpdateTime;
 	GLShaderProgram BoxShader;
 	GLBVMesh<Vertex3D, mat4, MeshElementType::UnsignedByte> BoxMesh;
@@ -44,7 +44,7 @@ public:
 	vec3 CamYawPitchRoll;
 
 	BasicDemo() :
-		World(),
+		PhysicsWorld(),
 		LastUpdateTime(0),
 		BoxShader
 		(
@@ -52,6 +52,7 @@ public:
 "uniform mat4 ProjectionView;"
 "in vec3 Position;"
 "in vec3 Normal;"
+"in vec2 TexCoord;"
 "in mat4 Transform;"
 "out vec3 WorldNormal;"
 "void main()"
@@ -120,7 +121,7 @@ public:
 			Vertex3D(V4, vec3(0, 1, 0)), Vertex3D(V5, vec3(0, 1, 0)), Vertex3D(V0, vec3(0, 1, 0)), Vertex3D(V1, vec3(0, 1, 0)),
 			Vertex3D(V7, vec3(0, -1, 0)), Vertex3D(V6, vec3(0, -1, 0)), Vertex3D(V3, vec3(0, -1, 0)), Vertex3D(V2, vec3(0, -1, 0))
 		};
-		BoxMesh.VertexBuffer.PushBack(Vertices, countof(Vertices));
+		BoxMesh.VertexBufferVector.PushBack(Vertices, countof(Vertices));
 		
 #define FACE(B) 0 + B, 1 + B, 2 + B, 1 + B, 3 + B, 2 + B
 		GLubyte Indices[] =
@@ -129,27 +130,27 @@ public:
 			FACE(12), FACE(16), FACE(20)
 		};
 #undef FACE
-		BoxMesh.IndexBuffer.PushBack(Indices, countof(Indices));
+		BoxMesh.IndexBufferVector.PushBack(Indices, countof(Indices));
 
-		BoxMesh.InstanceBuffer.PushBack(mat4(
+		BoxMesh.InstanceBufferVector.PushBack(mat4(
 			vec4(1, 0, 0, 0),
 			vec4(0, 1, 0, 0),
 			vec4(0, 0, 1, 0),
 			vec4(0, 0, 0, 1)));
 
 		GeneralObjVertices ov;
-		LoadObjFile("test.obj", GeneralObjVertices::OnMeshSubset, &ov);
+		LoadObjFile("Media\\test.obj", GeneralObjVertices::OnMeshSubset, &ov);
 
 		for (auto& it : ov.Vertices)
 		{
-			ObjMesh.VertexBuffer.PushBack(it);
+			ObjMesh.VertexBufferVector.PushBack(it);
 		}
 		for (auto& it : ov.Indices)
 		{
-			ObjMesh.IndexBuffer.PushBack(it);
+			ObjMesh.IndexBufferVector.PushBack(it);
 		}
 
-		ObjMesh.InstanceBuffer.PushBack(mat4(
+		ObjMesh.InstanceBufferVector.PushBack(mat4(
 			vec4(1, 0, 0, 0),
 			vec4(0, 1, 0, 0),
 			vec4(0, 0, 1, 0),
@@ -184,10 +185,10 @@ public:
 		mat4 MatProjectionView = MatProjection * MatView;
 		mat4 MatItem = RenderUtility::Mat4RotEuler((float)Time, 0.0f, 0.0f);
 
-		BoxMesh.InstanceBuffer[0] = MatItem;
+		BoxMesh.InstanceBufferVector[0] = MatItem;
 
-		MatItem = RenderUtility::Mat4RotEuler((float)Time, 0.0f, 0.0f);
-		ObjMesh.InstanceBuffer[0] = MatItem;
+		MatItem = RenderUtility::Mat4RotEuler((float)Time * 2.0f, 0.0f, 0.0f) * RenderUtility::Mat4Translate(vec3(-5, 0, -5));
+		ObjMesh.InstanceBufferVector[0] = MatItem;
 
 		BoxShader.Use();
 		BoxShader.SetUniform("View", MatView);
@@ -202,7 +203,7 @@ public:
 	void OnUpdate(double Time) override
 	{
 		double DeltaTime = Time - LastUpdateTime;
-		World.Tick(DeltaTime);
+		PhysicsWorld.Tick(DeltaTime);
 		LastUpdateTime += DeltaTime;
 	}
 };
