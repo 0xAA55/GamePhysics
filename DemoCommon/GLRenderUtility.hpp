@@ -1,7 +1,7 @@
 #pragma once
 #include<GLRendererBase.hpp>
 #include<GLShader.hpp>
-#include<GLMeshVAO.hpp>
+#include<GLMesh.hpp>
 namespace GLRenderer
 {
 	enum class FaceType
@@ -45,6 +45,8 @@ namespace GLRenderer
 		static mat4 GetViewMatrix(GLfloat Yaw, GLfloat Pitch, GLfloat Roll, vec3 Position);
 		static mat3 Mat3RotEuler(vec3 YawPitchRoll);
 		static mat4 Mat4RotEuler(vec3 YawPitchRoll);
+		static mat4 Mat4Translate(vec3 Position);
+		static mat4 Mat4Scale(const float s);
 		static mat4 GetViewMatrix(vec3 YawPitchRoll, vec3 Position);
 		static mat4 Perspective(GLfloat Left = -1, GLfloat Right = 1, GLfloat Bottom = -1, GLfloat Top = 1, GLfloat Near = 1, GLfloat Far = 1000);
 	};

@@ -113,6 +113,26 @@ namespace GLRenderer
 		return Mat4RotEuler(YawPitchRoll.x, YawPitchRoll.y, YawPitchRoll.z);
 	}
 
+	mat4 RenderUtility::Mat4Translate(vec3 Position)
+	{
+		return mat4(
+			vec4(1, 0, 0, 0),
+			vec4(0, 1, 0, 0),
+			vec4(0, 0, 1, 0),
+			vec4(Position.x, Position.y, Position.z, 1)
+		);
+	}
+
+	mat4 RenderUtility::Mat4Scale(const float s)
+	{
+		return mat4(
+			vec4(s, 0, 0, 0),
+			vec4(0, s, 0, 0),
+			vec4(0, 0, s, 0),
+			vec4(0, 0, 0, 1)
+		);
+	}
+
 	mat4 RenderUtility::GetViewMatrix(vec3 YawPitchRoll, vec3 Position)
 	{
 		return GetViewMatrix(YawPitchRoll.x, YawPitchRoll.y, YawPitchRoll.z, Position);
