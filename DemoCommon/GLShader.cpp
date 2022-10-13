@@ -1,7 +1,7 @@
 #include <GL/glew.h>
 #include "GLShader.hpp"
 #include <cstring>
-#include<GLMeshVAO.hpp>
+#include<GLMesh.hpp>
 using namespace GLRenderer;
 
 ShaderCompilationException::ShaderCompilationException(std::string InfoLog) noexcept :

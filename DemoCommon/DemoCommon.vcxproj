@@ -278,8 +278,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AppFrame.hpp" />
+    <ClInclude Include="GLSharedBuffer.hpp" />
     <ClInclude Include="GLBufferObject.hpp" />
-    <ClInclude Include="GLMeshVAO.hpp" />
+    <ClInclude Include="GLMesh.hpp" />
     <ClInclude Include="GLRendererBase.hpp" />
     <ClInclude Include="SceneObject.hpp" />
     <ClInclude Include="GLShader.hpp" />
@@ -294,8 +295,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AppFrame.cpp" />
+    <ClCompile Include="GLSharedBuffer.cpp" />
     <ClCompile Include="GLBufferObject.cpp" />
-    <ClCompile Include="GLMeshVAO.cpp" />
+    <ClCompile Include="GLMesh.cpp" />
     <ClCompile Include="GLRendererBase.cpp" />
     <ClCompile Include="SceneObject.cpp" />
     <ClCompile Include="GLShader.cpp" />

@@ -1,4 +1,4 @@
-#include "GLMeshVAO.hpp"
+#include "GLMesh.hpp"
 #include <GL/glew.h>
 using namespace GLRenderer;
 
@@ -86,5 +86,75 @@ void AttribDesc::Describe(const GLShaderProgram& Shader, GLuint AVD) const
 	}
 }
 
+GLMesh::GLMesh(MeshPrimitiveType PrimitiveType):
+	PrimitiveType(PrimitiveType),
+	IndexBufferElementType(MeshElementType::UnsignedInt)
+{
+}
 
+GLMesh::GLMesh(const GLMesh& Mesh) :
+	PrimitiveType(Mesh.PrimitiveType),
+	IndexBufferElementType(Mesh.IndexBufferElementType),
+	VertexBuffer(Mesh.VertexBuffer),
+	IndexBuffer(Mesh.IndexBuffer),
+	InstanceBuffer(Mesh.InstanceBuffer),
+	CommandBuffer(Mesh.CommandBuffer),
+	VertexBufferFormat(Mesh.VertexBufferFormat),
+	InstanceBufferFormat(Mesh.InstanceBufferFormat)
+{
+}
 
+GLVAO& GLMesh::Describe(const GLShaderProgram& Shader)
+{
+	bool ShouldDescribe = VertexBuffer.BufferChanged() || InstanceBuffer.BufferChanged();
+	GLVAO& VAO = VAOsForEachShader[Shader];
+	if (!VAO.IsDescribed()) ShouldDescribe = true;
+	VAO.Bind();
+	if (ShouldDescribe)
+	{
+		VerifyBufferFormat();
+		if (VertexBuffer.Size())
+		{
+			VertexBuffer.BindForDraw();
+			for (auto& it : VertexBufferFormat) it.Describe(Shader, 0);
+			VertexBuffer.Unbind();
+		}
+		if (InstanceBuffer.Size())
+		{
+			InstanceBuffer.BindForDraw();
+			for (auto& it : InstanceBufferFormat) it.Describe(Shader, 1);
+			InstanceBuffer.Unbind();
+		}
+		VAO.SetDescribed();
+	}
+	return VAO;
+}
+
+void GLMesh::Draw(const GLShaderProgram& Shader)
+{
+	Shader.Use();
+	auto& VAO = Describe(Shader);
+	if (IndexBuffer.Size())
+	{
+		IndexBuffer.BindForDraw();
+		if (CommandBuffer.Size())
+		{
+			CommandBuffer.BindForDraw();
+			VAO.DrawByElements(PrimitiveType, IndexBufferElementType, static_cast<GLsizei>(CommandBuffer.Size()));
+			CommandBuffer.Unbind();
+		}
+		else VAO.DrawByElements(PrimitiveType, IndexBufferElementType, static_cast<GLsizei>(IndexBuffer.Size()), static_cast<GLsizei>(InstanceBuffer.Size()));
+		IndexBuffer.Unbind();
+	}
+	else
+	{
+		if (CommandBuffer.Size())
+		{
+			CommandBuffer.BindForDraw();
+			VAO.Draw(PrimitiveType, static_cast<GLsizei>(CommandBuffer.Size()));
+			CommandBuffer.Unbind();
+		}
+		else VAO.Draw(PrimitiveType, static_cast<GLsizei>(VertexBuffer.Size()), static_cast<GLsizei>(InstanceBuffer.Size()));
+	}
+	Shader.Unuse();
+}

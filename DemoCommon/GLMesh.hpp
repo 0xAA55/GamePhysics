@@ -1,6 +1,6 @@
 #pragma once
 #include<GLRendererBase.hpp>
-#include<GLBufferObject.hpp>
+#include<GLSharedBuffer.hpp>
 #include<GLShader.hpp>
 namespace GLRenderer
 {
@@ -94,10 +94,38 @@ namespace GLRenderer
 		bool AsFloat;
 		bool Normalize;
 
-		AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset = -1, GLsizei Stride = -1, bool AsFloat = true, bool Normalize = false);
-		AttribDesc(std::string Name, std::string Type, GLsizei Offset = -1, GLsizei Stride = -1, bool AsFloat = true, bool Normalize = false);
+		AttribDesc(std::string Name, AttribTypeEnum Type, GLsizei Offset = 0, GLsizei Stride = 0, bool AsFloat = true, bool Normalize = false);
+		AttribDesc(std::string Name, std::string Type, GLsizei Offset = 0, GLsizei Stride = 0, bool AsFloat = true, bool Normalize = false);
 
 		void Describe(const GLShaderProgram& Shader, GLuint AVD) const;
 		inline GLsizei GetSizeBytes() const { return GetNumUnits(Type) * GetUnitLength(Type); }
+	};
+
+	using AttribDescArray = std::vector<AttribDesc>;
+
+	class GLMesh
+	{
+	protected:
+		VAOContainer VAOsForEachShader;
+		virtual void VerifyBufferFormat() {};
+		GLVAO& Describe(const GLShaderProgram& Shader);
+
+	public:
+		MeshPrimitiveType PrimitiveType;
+		MeshElementType IndexBufferElementType;
+
+		GLSharedBuffer VertexBuffer;
+		GLSharedBuffer IndexBuffer;
+		GLSharedBuffer InstanceBuffer;
+		GLSharedBuffer CommandBuffer;
+
+		AttribDescArray VertexBufferFormat;
+		AttribDescArray InstanceBufferFormat;
+
+		GLMesh();
+		GLMesh(const GLMesh& Mesh);
+		GLMesh(MeshPrimitiveType PrimitiveType);
+
+		virtual void Draw(const GLShaderProgram& Shader);
 	};
 }
