@@ -9,7 +9,3 @@ BufferCastingError::BufferCastingError(std::string What) noexcept :
 template GLBufferVector<GLubyte>;
 template GLBufferVector<GLushort>;
 template GLBufferVector<GLuint>;
-
-template GLBufferVectorNC<GLubyte>;
-template GLBufferVectorNC<GLushort>;
-template GLBufferVectorNC<GLuint>;
