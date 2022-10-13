@@ -55,6 +55,9 @@ namespace GLRenderer
 		GLBufferObject(BufferType Type, size_t Length, BufferUsage Usage, GLBufferObject &CopyFrom, ptrdiff_t CopyLength = -1);
 		~GLBufferObject();
 
+		inline BufferType GetBufferType() const { return Type; }
+		inline BufferUsage GetBufferUsage() const { return Usage; }
+
 		inline operator GLuint() const { return Object; }
 		inline GLuint GetObject() const { return Object; }
 		inline size_t GetLength() const { return Length; }
