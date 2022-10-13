@@ -1,20 +1,28 @@
 #pragma once
-#include<GLShader.hpp>
-#include<GLMeshVAO.hpp>
-#include<GLRenderUtility.hpp>
-#include<map>
+#include<GLRendererBase.hpp>
 namespace GLRenderer
 {
+	class SceneManager;
 	class GLRenderer
 	{
-	protected:
-		
-
 	public:
+		inline GLRenderer(SceneManager& Scene) :
+			Scene(Scene)
+		{}
 
+		virtual bool CheckRequirements() = 0;
+		virtual void LoadResources() = 0;
+		virtual void UnloadResources() = 0;
+		virtual void Update(double Time) = 0;
+		virtual void Render(double Time) = 0;
+
+		inline ~GLRenderer()
+		{
+			UnloadResources();
+		}
 
 	protected:
-
+		SceneManager& Scene;
 
 
 	};
